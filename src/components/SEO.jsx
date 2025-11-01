@@ -16,7 +16,7 @@ const SEO = ({
 }) => {
   const location = useLocation();
   // IMPORTANT: Update this with your actual domain after deployment
-  const baseUrl = 'https://your-domain.vercel.app';
+  const baseUrl = 'https://falusy.site';
   const defaultImage = `${baseUrl}/og-image.png`;
   
   // Default values based on current route

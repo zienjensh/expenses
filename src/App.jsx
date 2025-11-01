@@ -9,6 +9,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import MobileNavBar from './components/MobileNavBar';
+import InstallPrompt from './components/InstallPrompt';
+import OfflineIndicator from './components/OfflineIndicator';
 import Dashboard from './pages/Dashboard';
 import Expenses from './pages/Expenses';
 import Revenues from './pages/Revenues';
@@ -72,6 +74,8 @@ function App() {
               },
             }}
           />
+          <InstallPrompt />
+          <OfflineIndicator />
         </Router>
       </ThemeProvider>
     </AuthProvider>

@@ -1,0 +1,45 @@
+{
+  "name": "إدارة المصروفات",
+  "short_name": "المصروفات",
+  "description": "نظام إدارة المصروفات والإيرادات الشخصي",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0E0E0E",
+  "theme_color": "#E50914",
+  "orientation": "portrait-primary",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "إضافة مصروف",
+      "short_name": "مصروف",
+      "description": "إضافة مصروف جديد",
+      "url": "/expenses?action=add",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "إضافة إيراد",
+      "short_name": "إيراد",
+      "description": "إضافة إيراد جديد",
+      "url": "/revenues?action=add",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
+

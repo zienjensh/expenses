@@ -5,11 +5,18 @@ import {
   ArrowUpCircle, 
   Folder,
   FileText, 
-  Settings 
+  Settings,
+  User,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import toast from 'react-hot-toast';
 
 const Sidebar = ({ onClose }) => {
   const location = useLocation();
+  const { currentUser, logout } = useAuth();
+  const { theme } = useTheme();
 
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: 'لوحة التحكم' },
@@ -20,9 +27,20 @@ const Sidebar = ({ onClose }) => {
     { path: '/settings', icon: Settings, label: 'الإعدادات' },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success('تم تسجيل الخروج بنجاح');
+      if (onClose) onClose();
+    } catch (error) {
+      console.error('Error logging out:', error);
+      toast.error('فشل في تسجيل الخروج');
+    }
+  };
+
   return (
-    <aside className="h-full w-full">
-      <div className="p-6">
+    <aside className="h-full w-full flex flex-col">
+      <div className="flex-1 p-6 overflow-y-auto">
         <h1 className="text-2xl font-bold text-fire-red mb-8">إدارة المصروفات</h1>
         <nav className="space-y-2">
           {menuItems.map((item) => {
@@ -48,6 +66,55 @@ const Sidebar = ({ onClose }) => {
             );
           })}
         </nav>
+      </div>
+
+      {/* User Info and Logout at bottom */}
+      <div className={`p-4 border-t ${
+        theme === 'dark'
+          ? 'border-fire-red/20 bg-charcoal/50'
+          : 'border-gray-200 bg-gray-50/50'
+      }`}>
+        {/* User Info */}
+        <div className={`mb-3 p-3 rounded-lg ${
+          theme === 'dark'
+            ? 'bg-white/5 border border-white/10'
+            : 'bg-white border border-gray-200'
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+              theme === 'dark'
+                ? 'bg-fire-red/20 text-fire-red border border-fire-red/30'
+                : 'bg-fire-red/10 text-fire-red border border-fire-red/20'
+            }`}>
+              {currentUser?.displayName?.[0]?.toUpperCase() || currentUser?.email?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-semibold truncate ${
+                theme === 'dark' ? 'text-light-gray' : 'text-gray-900'
+              }`}>
+                {currentUser?.displayName || 'المستخدم'}
+              </p>
+              <p className={`text-xs truncate ${
+                theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
+              }`}>
+                {currentUser?.email}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className={`group w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+            theme === 'dark'
+              ? 'bg-fire-red/10 hover:bg-fire-red/20 text-fire-red border border-fire-red/20 hover:border-fire-red/40'
+              : 'bg-fire-red/5 hover:bg-fire-red/10 text-fire-red border border-fire-red/20 hover:border-fire-red/40'
+          }`}
+        >
+          <LogOut size={18} className="transition-transform duration-200 group-hover:rotate-[-15deg]" />
+          <span className="font-medium">تسجيل الخروج</span>
+        </button>
       </div>
     </aside>
   );

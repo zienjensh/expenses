@@ -274,15 +274,59 @@ const Settings = () => {
                     onChange={(e) => handleCurrencyChange(e.target.value)}
                     className={`px-4 py-2.5 rounded-xl border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-fire-red/20 ${
                       theme === 'dark'
-                        ? 'bg-white/5 border-fire-red/20 text-white hover:border-fire-red/40'
+                        ? 'bg-charcoal border-fire-red/20 text-light-gray hover:border-fire-red/40'
                         : 'bg-white border-gray-200 text-gray-900 hover:border-fire-red/40'
                     }`}
+                    style={{
+                      backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
+                      color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
+                    }}
                   >
-                    <option value="ر.س">ريال سعودي (ر.س)</option>
-                    <option value="$">دولار ($)</option>
-                    <option value="€">يورو (€)</option>
-                    <option value="GBP">جنيه مصري (ج.م)</option>
-                    <option value="د.إ">درهم إماراتي (د.إ)</option>
+                    <option 
+                      value="ر.س"
+                      style={{
+                        backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
+                        color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
+                      }}
+                    >
+                      ريال سعودي (ر.س)
+                    </option>
+                    <option 
+                      value="$"
+                      style={{
+                        backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
+                        color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
+                      }}
+                    >
+                      دولار ($)
+                    </option>
+                    <option 
+                      value="€"
+                      style={{
+                        backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
+                        color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
+                      }}
+                    >
+                      يورو (€)
+                    </option>
+                    <option 
+                      value="GBP"
+                      style={{
+                        backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
+                        color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
+                      }}
+                    >
+                      جنيه مصري (ج.م)
+                    </option>
+                    <option 
+                      value="د.إ"
+                      style={{
+                        backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
+                        color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
+                      }}
+                    >
+                      درهم إماراتي (د.إ)
+                    </option>
                   </select>
                 </div>
               </div>

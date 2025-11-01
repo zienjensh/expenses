@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Tajawal', sans-serif;
+  background-color: #F2F2F2;
+  color: #0E0E0E;
+  direction: rtl;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+.dark body {
+  background-color: #0E0E0E;
+  color: #F2F2F2;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e5e5e5;
+  transition: background 0.3s ease;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E50914;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff1a26;
+}
+
+/* Glassmorphism effect */
+.glass {
+  background: rgba(242, 242, 242, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(229, 9, 20, 0.2);
+  transition: background 0.3s ease;
+}
+
+.dark .glass {
+  background: rgba(14, 14, 14, 0.7);
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Glow effect */
+.glow-red {
+  box-shadow: 0 0 20px rgba(229, 9, 20, 0.3);
+}
+
+.glow-red:hover {
+  box-shadow: 0 0 30px rgba(229, 9, 20, 0.5);
+}
+
+/* Mobile navigation safe area */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.h-safe-area-inset-bottom {
+  height: env(safe-area-inset-bottom);
+}
+
+/* Scale animations */
+.scale-102 {
+  transform: scale(1.02);
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Slow spin animation for sun icon */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+/* Glassmorphism enhancements */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-nav {
+  background: rgba(14, 14, 14, 0.7);
+  border: 1px solid rgba(229, 9, 20, 0.2);
+}
+
+/* Ensure mobile nav bar is always visible and on top */
+@media (max-width: 768px) {
+  /* Prevent modals from covering the mobile nav */
+  [class*="z-50"],
+  [class*="z-40"],
+  [class*="z-30"] {
+    z-index: 9998 !important;
+  }
+  
+  /* Ensure mobile nav bar container is always on top */
+  nav[class*="fixed"][class*="bottom-0"],
+  #mobile-nav-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    transform: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+  }
+  
+  /* Prevent any overflow from hiding the nav bar */
+  body, html {
+    overflow-x: hidden;
+    position: relative;
+  }
+  
+  /* Ensure main content doesn't overflow behind nav */
+  main {
+    max-height: calc(100vh - 64px - 80px); /* header height + nav height */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+

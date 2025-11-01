@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import StatsCard from '../components/StatsCard';
 import TransactionTable from '../components/TransactionTable';
 import AddTransactionModal from '../components/AddTransactionModal';
+import SEO from '../components/SEO';
 import { ArrowDownCircle, DollarSign, Receipt, Plus } from 'lucide-react';
 
 const Expenses = () => {
@@ -27,7 +28,13 @@ const Expenses = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <SEO 
+        title="المصروفات - إدارة مصروفاتك اليومية"
+        description="أضف وتتبع جميع مصروفاتك اليومية والشهرية بسهولة. نظام شامل لإدارة المصروفات مع إمكانية التصنيف والتقارير."
+        keywords="المصروفات, إدارة المصروفات, تتبع المصروفات, مصروفات شخصية"
+      />
+      <div className="space-y-6">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">المصروفات</h1>
@@ -78,7 +85,8 @@ const Expenses = () => {
           onClose={() => setShowModal(false)}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

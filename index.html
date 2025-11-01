@@ -1,21 +1,136 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
   <head>
+    <!-- Basic Meta Tags -->
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    
+    <!-- Primary Meta Tags -->
+    <title>لوحة إدارة المصروفات - نظام إدارة المصروفات والإيرادات الشخصي | Expense Management</title>
+    <meta name="title" content="لوحة إدارة المصروفات - نظام إدارة المصروفات والإيرادات الشخصي" />
+    <meta name="description" content="نظام شامل لإدارة المصروفات والإيرادات الشخصية. تتبع مصروفاتك وإيراداتك بسهولة، أنشئ تقارير مفصلة، وأدر مشاريعك المالية باحترافية. تطبيق مجاني وآمن مع دعم كامل للغة العربية." />
+    <meta name="keywords" content="إدارة المصروفات, نظام مالي, تتبع الإيرادات, إدارة الميزانية, تطبيق مالي, مصروفات شخصية, تقارير مالية, إدارة المشاريع المالية, نظام محاسبي شخصي" />
+    <meta name="author" content="Expense Management Dashboard" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="language" content="Arabic" />
+    <meta name="revisit-after" content="7 days" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://your-domain.vercel.app/" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://your-domain.vercel.app/" />
+    <meta property="og:title" content="لوحة إدارة المصروفات - نظام إدارة المصروفات والإيرادات الشخصي" />
+    <meta property="og:description" content="نظام شامل لإدارة المصروفات والإيرادات الشخصية. تتبع مصروفاتك وإيراداتك بسهولة، أنشئ تقارير مفصلة، وأدر مشاريعك المالية باحترافية." />
+    <meta property="og:image" content="https://your-domain.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="لوحة إدارة المصروفات - نظام إدارة المصروفات والإيرادات الشخصي" />
+    <meta property="og:locale" content="ar_SA" />
+    <meta property="og:site_name" content="إدارة المصروفات" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://your-domain.vercel.app/" />
+    <meta name="twitter:title" content="لوحة إدارة المصروفات - نظام إدارة المصروفات والإيرادات الشخصي" />
+    <meta name="twitter:description" content="نظام شامل لإدارة المصروفات والإيرادات الشخصية. تتبع مصروفاتك وإيراداتك بسهولة، أنشئ تقارير مفصلة، وأدر مشاريعك المالية باحترافية." />
+    <meta name="twitter:image" content="https://your-domain.vercel.app/og-image.png" />
+    <meta name="twitter:image:alt" content="لوحة إدارة المصروفات" />
+    
+    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="shortcut icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="description" content="نظام إدارة المصروفات والإيرادات الشخصي - أضف وتتبع مصروفاتك وإيراداتك بسهولة" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icon-192x192.png" />
+    
+    <!-- PWA & Mobile -->
     <meta name="theme-color" content="#E50914" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="المصروفات" />
-    <link rel="apple-touch-icon" href="/icon-192x192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <title>لوحة إدارة المصروفات</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "لوحة إدارة المصروفات",
+      "alternateName": "Expense Management Dashboard",
+      "url": "https://your-domain.vercel.app/",
+      "description": "نظام شامل لإدارة المصروفات والإيرادات الشخصية. تتبع مصروفاتك وإيراداتك بسهولة، أنشئ تقارير مفصلة، وأدر مشاريعك المالية باحترافية.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web Browser, iOS, Android",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "ratingCount": "1"
+      },
+      "inLanguage": "ar",
+      "availableLanguage": ["ar"],
+      "browserRequirements": "Requires JavaScript. Requires HTML5.",
+      "softwareVersion": "1.0.0",
+      "releaseNotes": "نظام إدارة مصروفات شخصي شامل باللغة العربية",
+      "screenshot": "https://your-domain.vercel.app/og-image.png",
+      "featureList": [
+        "إدارة المصروفات",
+        "تتبع الإيرادات",
+        "تقارير مالية",
+        "إدارة المشاريع",
+        "دعم اللغة العربية",
+        "واجهة مستخدم عصرية"
+      ]
+    }
+    </script>
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "إدارة المصروفات",
+      "url": "https://your-domain.vercel.app/",
+      "logo": "https://your-domain.vercel.app/icon-512x512.png",
+      "description": "نظام شامل لإدارة المصروفات والإيرادات الشخصية",
+      "sameAs": [],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "Customer Service",
+        "availableLanguage": ["Arabic"]
+      }
+    }
+    </script>
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "الرئيسية",
+          "item": "https://your-domain.vercel.app/"
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

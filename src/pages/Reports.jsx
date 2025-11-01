@@ -82,7 +82,13 @@ const Reports = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <SEO 
+        title="التقارير - تقارير مالية مفصلة"
+        description="احصل على تقارير مالية مفصلة وشاملة. تحليل المصروفات والإيرادات مع رسوم بيانية تفاعلية."
+        keywords="التقارير, تقارير مالية, تحليل مالي, إحصائيات"
+      />
+      <div className="space-y-6">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-900 dark:text-white mb-2">التقارير</h1>
@@ -241,7 +247,8 @@ const Reports = () => {
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

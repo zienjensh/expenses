@@ -5,6 +5,7 @@ import StatsCard from '../components/StatsCard';
 import ChartOverview from '../components/ChartOverview';
 import TransactionTable from '../components/TransactionTable';
 import AddTransactionModal from '../components/AddTransactionModal';
+import SEO from '../components/SEO';
 import { DollarSign, ArrowDownCircle, ArrowUpCircle, TrendingUp, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -49,8 +50,14 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="mb-8 flex items-center justify-between">
+    <>
+      <SEO 
+        title="لوحة التحكم - إدارة المصروفات والإيرادات"
+        description="نظرة شاملة على وضعك المالي. تتبع إجمالي المصروفات والإيرادات وصافي الدخل مع رسوم بيانية تفاعلية."
+        keywords="لوحة التحكم, إدارة مالية, نظرة عامة, إحصائيات مالية"
+      />
+      <div className="space-y-6">
+        <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">لوحة التحكم</h1>
           <p className="text-gray-600 dark:text-light-gray/70">نظرة شاملة على وضعك المالي</p>
@@ -170,7 +177,8 @@ const Dashboard = () => {
           onClose={() => setShowRevenueModal(false)}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

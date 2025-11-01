@@ -1,0 +1,22 @@
+# robots.txt for Expense Management Dashboard
+
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /expenses
+Allow: /revenues
+Allow: /projects
+Allow: /reports
+Allow: /settings
+
+# Disallow private/user-specific content
+Disallow: /api/
+Disallow: /*.json$
+Disallow: /*?*
+
+# Sitemap location
+Sitemap: https://your-domain.vercel.app/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+

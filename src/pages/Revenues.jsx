@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import StatsCard from '../components/StatsCard';
 import TransactionTable from '../components/TransactionTable';
 import AddTransactionModal from '../components/AddTransactionModal';
+import SEO from '../components/SEO';
 import { ArrowUpCircle, DollarSign, Receipt, Plus } from 'lucide-react';
 
 const Revenues = () => {
@@ -27,7 +28,13 @@ const Revenues = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <SEO 
+        title="الإيرادات - تتبع إيراداتك"
+        description="سجل وتتبع جميع إيراداتك. أضف مصادر دخلك المختلفة واحصل على تقارير مفصلة."
+        keywords="الإيرادات, تتبع الإيرادات, الدخل, مصادر الدخل"
+      />
+      <div className="space-y-6">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">الإيرادات</h1>
@@ -78,7 +85,8 @@ const Revenues = () => {
           onClose={() => setShowModal(false)}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

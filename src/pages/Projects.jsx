@@ -492,12 +492,18 @@ const Projects = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">المشاريع</h1>
-          <p className="text-gray-600 dark:text-light-gray/70">إدارة مشاريعك وملفاتها</p>
-        </div>
+    <>
+      <SEO 
+        title="المشاريع - إدارة مشاريعك المالية"
+        description="أنشئ وأدر مشاريعك المالية المختلفة. ربط المصروفات والإيرادات بكل مشروع لتتبع أفضل."
+        keywords="المشاريع, إدارة المشاريع, مشاريع مالية, تتبع المشاريع"
+      />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">المشاريع</h1>
+            <p className="text-gray-600 dark:text-light-gray/70">إدارة مشاريعك وملفاتها</p>
+          </div>
         <button
           onClick={() => {
             setProjectName('');
@@ -771,7 +777,8 @@ const Projects = () => {
           }}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

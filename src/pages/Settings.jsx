@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import SEO from '../components/SEO';
 import { User, Mail, Moon, Sun, DollarSign, LogOut, Save, Settings as SettingsIcon, CreditCard, Palette, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { updateProfile } from 'firebase/auth';
@@ -46,7 +47,14 @@ const Settings = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <>
+      <SEO 
+        title="الإعدادات - تخصيص حسابك"
+        description="قم بتخصيص إعدادات حسابك. اختر العملة، الوضع الداكن/الفاتح، وغيرها من الخيارات."
+        keywords="الإعدادات, تخصيص, إعدادات الحساب"
+        noindex={true}
+      />
+      <div className="space-y-6 animate-fadeIn">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-4">
@@ -415,7 +423,8 @@ const Settings = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

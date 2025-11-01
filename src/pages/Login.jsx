@@ -52,7 +52,13 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-light-gray dark:bg-charcoal p-4 transition-colors duration-300">
+    <>
+      <SEO 
+        title="تسجيل الدخول - لوحة إدارة المصروفات"
+        description="سجل دخولك إلى نظام إدارة المصروفات والإيرادات الشخصي"
+        keywords="تسجيل الدخول, حساب, مصروفات"
+      />
+      <div className="min-h-screen flex items-center justify-center bg-light-gray dark:bg-charcoal p-4 transition-colors duration-300">
       <div className="w-full max-w-md bg-white/80 dark:bg-charcoal/80 backdrop-blur-md rounded-2xl p-8 border border-gray-200 dark:border-fire-red/20 glow-red">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-fire-red mb-2">إدارة المصروفات</h1>
@@ -154,7 +160,8 @@ const Login = () => {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

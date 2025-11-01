@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { User, Mail, Lock, LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
 

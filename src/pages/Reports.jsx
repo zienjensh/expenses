@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTransactions } from '../context/TransactionContext';
 import { useTheme } from '../context/ThemeContext';
+import SEO from '../components/SEO';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Download, FileText, Calendar } from 'lucide-react';
 

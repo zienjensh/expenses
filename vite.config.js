@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icon-192x192.png', 'icon-512x512.png'],
+      includeAssets: ['favicon.ico'],
       manifest: {
         name: 'إدارة المصروفات',
         short_name: 'المصروفات',
@@ -22,16 +22,21 @@ export default defineConfig({
         lang: 'ar',
         icons: [
           {
-            src: '/icon-192x192.png',
+            src: '/icon-192x192.svg',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           },
           {
-            src: '/icon-512x512.png',
+            src: '/icon-512x512.svg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
+          },
+          {
+            src: '/favicon.ico',
+            sizes: '48x48',
+            type: 'image/x-icon'
           }
         ],
         shortcuts: [
@@ -40,7 +45,7 @@ export default defineConfig({
             short_name: 'مصروف',
             description: 'إضافة مصروف جديد',
             url: '/expenses?action=add',
-            icons: [{ src: '/icon-192x192.png', sizes: '192x192' }]
+            icons: [{ src: '/icon-192x192.svg', sizes: '192x192' }]
           }
         ]
       },

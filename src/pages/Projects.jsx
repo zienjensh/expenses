@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useProjects } from '../context/ProjectsContext';
 import { useTransactions } from '../context/TransactionContext';
 import { useTheme } from '../context/ThemeContext';
+import SEO from '../components/SEO';
 import { FolderPlus, Folder, X, Edit2, Trash2, ArrowLeft, Plus, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import AddTransactionModal from '../components/AddTransactionModal';
 import ConfirmDialog from '../components/ConfirmDialog';

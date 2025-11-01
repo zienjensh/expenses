@@ -98,8 +98,11 @@ export default defineConfig({
       },
       devOptions: {
         enabled: true,
-        type: 'module'
-      }
+        type: 'module',
+        navigateFallback: 'index.html'
+      },
+      injectRegister: 'script',
+      strategies: 'generateSW'
     })
   ],
   server: {

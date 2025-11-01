@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useTransactions } from '../context/TransactionContext';
 
-const AddTransactionModal = ({ type, onClose, editData = null }) => {
+const AddTransactionModal = ({ type, onClose, editData = null, projectId = null }) => {
   const { addExpense, addRevenue, updateExpense, updateRevenue } = useTransactions();
   const [formData, setFormData] = useState({
     amount: editData?.amount || '',
@@ -26,6 +26,10 @@ const AddTransactionModal = ({ type, onClose, editData = null }) => {
         ...formData,
         amount: parseFloat(formData.amount),
         date: formData.date,
+        // Include projectId if provided (for new transactions)
+        ...(projectId && !editData ? { projectId } : {}),
+        // Preserve projectId for edits if it exists
+        ...(editData?.projectId ? { projectId: editData.projectId } : {}),
       };
 
       if (editData) {

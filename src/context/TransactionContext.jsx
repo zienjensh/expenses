@@ -118,7 +118,8 @@ export const TransactionProvider = ({ children }) => {
       await addDoc(collection(db, 'expenses'), {
         ...expenseData,
         userId: currentUser.uid,
-        createdAt: Timestamp.now()
+        createdAt: Timestamp.now(),
+        // projectId is optional, can be undefined if not associated with a project
       });
       toast.success('تم إضافة المصروف بنجاح');
     } catch (error) {
@@ -133,7 +134,8 @@ export const TransactionProvider = ({ children }) => {
       await addDoc(collection(db, 'revenues'), {
         ...revenueData,
         userId: currentUser.uid,
-        createdAt: Timestamp.now()
+        createdAt: Timestamp.now(),
+        // projectId is optional, can be undefined if not associated with a project
       });
       toast.success('تم إضافة الإيراد بنجاح');
     } catch (error) {

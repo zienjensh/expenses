@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { useAuth } from './AuthContext';
 
 const ThemeContext = createContext({});
 
@@ -25,6 +28,7 @@ const getCurrencySymbol = (code) => {
 };
 
 export const ThemeProvider = ({ children }) => {
+  const { currentUser } = useAuth();
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     return savedTheme || 'dark';
@@ -39,6 +43,80 @@ export const ThemeProvider = ({ children }) => {
     return savedCurrency || 'ر.س';
   });
 
+  const [currencyLoading, setCurrencyLoading] = useState(true);
+
+  // Load currency from Firestore when user logs in
+  useEffect(() => {
+    const loadUserCurrency = async () => {
+      if (!currentUser) {
+        // If no user, use localStorage as fallback
+        const savedCurrency = localStorage.getItem('currency');
+        if (savedCurrency === 'جنيه' || savedCurrency === '£') {
+          setCurrency('GBP');
+        } else if (savedCurrency) {
+          setCurrency(savedCurrency);
+        }
+        setCurrencyLoading(false);
+        return;
+      }
+
+      try {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.currency) {
+            // Use currency from Firestore
+            setCurrency(userData.currency);
+            // Sync with localStorage as backup
+            localStorage.setItem('currency', userData.currency);
+          } else {
+            // If no currency in Firestore, check localStorage and save to Firestore
+            const savedCurrency = localStorage.getItem('currency');
+            let currencyToUse = savedCurrency || 'ر.س';
+            if (savedCurrency === 'جنيه' || savedCurrency === '£') {
+              currencyToUse = 'GBP';
+            }
+            
+            // Save to Firestore
+            await updateDoc(userDocRef, { currency: currencyToUse });
+            setCurrency(currencyToUse);
+            localStorage.setItem('currency', currencyToUse);
+          }
+        } else {
+          // User document doesn't exist, create it with default currency
+          const savedCurrency = localStorage.getItem('currency');
+          let currencyToUse = savedCurrency || 'ر.س';
+          if (savedCurrency === 'جنيه' || savedCurrency === '£') {
+            currencyToUse = 'GBP';
+          }
+          
+          await setDoc(userDocRef, {
+            userId: currentUser.uid,
+            currency: currencyToUse,
+            createdAt: new Date()
+          });
+          setCurrency(currencyToUse);
+          localStorage.setItem('currency', currencyToUse);
+        }
+      } catch (error) {
+        console.error('Error loading user currency:', error);
+        // Fallback to localStorage on error
+        const savedCurrency = localStorage.getItem('currency');
+        if (savedCurrency === 'جنيه' || savedCurrency === '£') {
+          setCurrency('GBP');
+        } else if (savedCurrency) {
+          setCurrency(savedCurrency);
+        }
+      } finally {
+        setCurrencyLoading(false);
+      }
+    };
+
+    loadUserCurrency();
+  }, [currentUser]);
+
   useEffect(() => {
     localStorage.setItem('theme', theme);
     if (theme === 'dark') {
@@ -50,9 +128,35 @@ export const ThemeProvider = ({ children }) => {
     }
   }, [theme]);
 
+  // Save currency to Firestore when it changes (only if user is logged in)
   useEffect(() => {
-    localStorage.setItem('currency', currency);
-  }, [currency]);
+    if (!currentUser || currencyLoading) return;
+
+    const saveCurrency = async () => {
+      try {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          await updateDoc(userDocRef, { currency });
+        } else {
+          await setDoc(userDocRef, {
+            userId: currentUser.uid,
+            currency,
+            createdAt: new Date()
+          });
+        }
+        // Also save to localStorage as backup
+        localStorage.setItem('currency', currency);
+      } catch (error) {
+        console.error('Error saving currency to Firestore:', error);
+        // Still save to localStorage as fallback
+        localStorage.setItem('currency', currency);
+      }
+    };
+
+    saveCurrency();
+  }, [currency, currentUser, currencyLoading]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
@@ -60,6 +164,7 @@ export const ThemeProvider = ({ children }) => {
 
   const updateCurrency = (newCurrency) => {
     setCurrency(newCurrency);
+    // Firestore save will happen in useEffect above
   };
 
   const value = {

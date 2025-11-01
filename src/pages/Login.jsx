@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { User, Mail, Lock, LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -19,11 +20,26 @@ const Login = () => {
 
     try {
       if (isLogin) {
-        await login(email, password);
+        if (!username.trim()) {
+          toast.error('يرجى إدخال اسم المستخدم');
+          setLoading(false);
+          return;
+        }
+        await login(username, password);
         toast.success('تم تسجيل الدخول بنجاح');
         navigate('/');
       } else {
-        await signup(email, password, displayName);
+        if (!username.trim()) {
+          toast.error('يرجى إدخال اسم المستخدم');
+          setLoading(false);
+          return;
+        }
+        if (!email.trim()) {
+          toast.error('يرجى إدخال البريد الإلكتروني');
+          setLoading(false);
+          return;
+        }
+        await signup(username, email, password, displayName);
         toast.success('تم إنشاء الحساب بنجاح');
         navigate('/');
       }
@@ -46,6 +62,48 @@ const Login = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Username field - always shown */}
+          <div>
+            <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">اسم المستخدم</label>
+            <div className="relative">
+              <User className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-light-gray/50" size={20} />
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                className="w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-charcoal/50 border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors"
+                placeholder="أدخل اسم المستخدم"
+                pattern="[a-zA-Z0-9_]+"
+                title="أحرف إنجليزية وأرقام وشرطة سفلية فقط"
+              />
+            </div>
+            {!isLogin && (
+              <p className="text-xs text-gray-500 dark:text-light-gray/50 mt-1">
+                3 أحرف على الأقل - أحرف إنجليزية وأرقام وشرطة سفلية فقط
+              </p>
+            )}
+          </div>
+
+          {/* Email field - only shown on signup */}
+          {!isLogin && (
+            <div>
+              <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">البريد الإلكتروني</label>
+              <div className="relative">
+                <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-light-gray/50" size={20} />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-charcoal/50 border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors"
+                  placeholder="أدخل بريدك الإلكتروني"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Display Name field - only shown on signup */}
           {!isLogin && (
             <div>
               <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">الاسم</label>
@@ -55,26 +113,11 @@ const Login = () => {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   className="w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-charcoal/50 border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors"
-                  placeholder="أدخل اسمك"
+                  placeholder="أدخل اسمك (اختياري)"
                 />
               </div>
             </div>
           )}
-
-          <div>
-            <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">البريد الإلكتروني</label>
-            <div className="relative">
-              <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-light-gray/50" size={20} />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-charcoal/50 border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors"
-                placeholder="أدخل بريدك الإلكتروني"
-              />
-            </div>
-          </div>
 
           <div>
             <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">كلمة المرور</label>

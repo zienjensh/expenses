@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, FileText, Settings } from 'lucide-react';
+import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, Folder, FileText, Settings } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 const MobileNavBar = () => {
@@ -10,7 +10,7 @@ const MobileNavBar = () => {
     { path: '/', icon: LayoutDashboard, label: 'التحكم' },
     { path: '/expenses', icon: ArrowDownCircle, label: 'المصروفات' },
     { path: '/revenues', icon: ArrowUpCircle, label: 'الإيرادات' },
-    { path: '/reports', icon: FileText, label: 'التقارير' },
+    { path: '/projects', icon: Folder, label: 'المشاريع' },
     { path: '/settings', icon: Settings, label: 'الإعدادات' },
   ];
 
@@ -60,9 +60,9 @@ const MobileNavBar = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`
-                  relative flex flex-col items-center justify-center gap-1.5 px-2 py-2.5 rounded-2xl
-                  transition-all duration-300 ease-out flex-1 max-w-[85px]
+                  className={`
+                  relative flex flex-col items-center justify-center gap-1.5 px-1 py-2.5 rounded-2xl
+                  transition-all duration-300 ease-out flex-1
                   ${isActive 
                     ? 'transform scale-105' 
                     : 'active:scale-95'

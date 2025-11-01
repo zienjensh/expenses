@@ -29,6 +29,48 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
+    
+    // Projects collection rules
+    match /projects/{projectId} {
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid);
+      
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Users collection rules (for user preferences like currency)
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      allow create: if request.auth != null && request.auth.uid == userId &&
+        request.resource.data.userId == request.auth.uid;
+      
+      allow update: if request.auth != null && request.auth.uid == userId &&
+        resource.data.userId == request.auth.uid;
+      
+      allow delete: if false; // Prevent deletion of user documents
+    }
+    
+    // Usernames collection rules (for username to email mapping)
+   // Allow read without auth for login purposes (only username and email, no sensitive data)
+    match /usernames/{usernameId} {
+      // Allow read without authentication (needed for login)
+      allow read: if true;
+      
+      // Only authenticated users can create usernames for themselves
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.email != null &&
+        request.resource.data.username != null;
+      
+      allow update: if false; // Usernames cannot be updated
+      
+      allow delete: if false; // Usernames cannot be deleted
+    }
   }
 }
 

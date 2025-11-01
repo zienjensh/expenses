@@ -3,6 +3,7 @@ import {
   LayoutDashboard, 
   ArrowDownCircle, 
   ArrowUpCircle, 
+  Folder,
   FileText, 
   Settings 
 } from 'lucide-react';
@@ -14,6 +15,7 @@ const Sidebar = ({ onClose }) => {
     { path: '/', icon: LayoutDashboard, label: 'لوحة التحكم' },
     { path: '/expenses', icon: ArrowDownCircle, label: 'المصروفات' },
     { path: '/revenues', icon: ArrowUpCircle, label: 'الإيرادات' },
+    { path: '/projects', icon: Folder, label: 'المشاريع' },
     { path: '/reports', icon: FileText, label: 'التقارير' },
     { path: '/settings', icon: Settings, label: 'الإعدادات' },
   ];

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { TransactionProvider } from './context/TransactionContext';
+import { ProjectsProvider } from './context/ProjectsContext';
 import { ThemeProvider } from './context/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
@@ -12,6 +13,7 @@ import Dashboard from './pages/Dashboard';
 import Expenses from './pages/Expenses';
 import Revenues from './pages/Revenues';
 import Reports from './pages/Reports';
+import Projects from './pages/Projects';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 
@@ -19,8 +21,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <ThemeProvider>
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -29,16 +31,19 @@ function App() {
               element={
                 <ProtectedRoute>
                   <TransactionProvider>
-                    <Layout sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}>
-                      <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/expenses" element={<Expenses />} />
-                        <Route path="/revenues" element={<Revenues />} />
-                        <Route path="/reports" element={<Reports />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="*" element={<Navigate to="/" />} />
-                      </Routes>
-                    </Layout>
+                    <ProjectsProvider>
+                      <Layout sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}>
+                        <Routes>
+                          <Route path="/" element={<Dashboard />} />
+                          <Route path="/expenses" element={<Expenses />} />
+                          <Route path="/revenues" element={<Revenues />} />
+                          <Route path="/projects" element={<Projects />} />
+                          <Route path="/reports" element={<Reports />} />
+                          <Route path="/settings" element={<Settings />} />
+                          <Route path="*" element={<Navigate to="/" />} />
+                        </Routes>
+                      </Layout>
+                    </ProjectsProvider>
                   </TransactionProvider>
                 </ProtectedRoute>
               }
@@ -68,8 +73,8 @@ function App() {
             }}
           />
         </Router>
-      </AuthProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 

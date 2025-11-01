@@ -1,15 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTransactions } from '../context/TransactionContext';
 import { useTheme } from '../context/ThemeContext';
 import StatsCard from '../components/StatsCard';
 import ChartOverview from '../components/ChartOverview';
 import TransactionTable from '../components/TransactionTable';
-import { DollarSign, ArrowDownCircle, ArrowUpCircle, TrendingUp } from 'lucide-react';
+import AddTransactionModal from '../components/AddTransactionModal';
+import { DollarSign, ArrowDownCircle, ArrowUpCircle, TrendingUp, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Dashboard = () => {
   const { expenses, revenues, loading } = useTransactions();
   const { currency } = useTheme();
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [showRevenueModal, setShowRevenueModal] = useState(false);
 
   const stats = useMemo(() => {
     const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
@@ -47,9 +50,29 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">لوحة التحكم</h1>
-        <p className="text-gray-600 dark:text-light-gray/70">نظرة شاملة على وضعك المالي</p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">لوحة التحكم</h1>
+          <p className="text-gray-600 dark:text-light-gray/70">نظرة شاملة على وضعك المالي</p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowExpenseModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-fire-red hover:bg-fire-red/90 text-white rounded-xl transition-all glow-red shadow-lg shadow-fire-red/30 hover:shadow-xl hover:shadow-fire-red/40 hover:scale-105 active:scale-95"
+          >
+            <Plus size={20} />
+            <span className="hidden sm:inline">إضافة مصروف</span>
+            <span className="sm:hidden">مصروف</span>
+          </button>
+          <button
+            onClick={() => setShowRevenueModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 hover:scale-105 active:scale-95"
+          >
+            <Plus size={20} />
+            <span className="hidden sm:inline">إضافة إيراد</span>
+            <span className="sm:hidden">إيراد</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -132,6 +155,21 @@ const Dashboard = () => {
           </table>
         </div>
       </div>
+
+      {/* Add Transaction Modals */}
+      {showExpenseModal && (
+        <AddTransactionModal
+          type="expense"
+          onClose={() => setShowExpenseModal(false)}
+        />
+      )}
+
+      {showRevenueModal && (
+        <AddTransactionModal
+          type="revenue"
+          onClose={() => setShowRevenueModal(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useTransactions } from '../context/TransactionContext';
+import { useProjects } from '../context/ProjectsContext';
 
 const AddTransactionModal = ({ type, onClose, editData = null, projectId = null }) => {
   const { addExpense, addRevenue, updateExpense, updateRevenue } = useTransactions();
+  const { projects } = useProjects();
   const [formData, setFormData] = useState({
     amount: editData?.amount || '',
     category: editData?.category || '',
@@ -11,6 +13,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
     type: editData?.type || (type === 'expense' ? 'ثابت' : ''),
     paymentMethod: editData?.paymentMethod || 'نقدي',
     date: editData?.date || new Date().toISOString().split('T')[0],
+    projectId: editData?.projectId || projectId || '',
   });
 
   const expenseCategories = ['طعام', 'مواصلات', 'صحة', 'ترفيه', 'فواتير', 'تسوق', 'أخرى'];
@@ -26,10 +29,8 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
         ...formData,
         amount: parseFloat(formData.amount),
         date: formData.date,
-        // Include projectId if provided (for new transactions)
-        ...(projectId && !editData ? { projectId } : {}),
-        // Preserve projectId for edits if it exists
-        ...(editData?.projectId ? { projectId: editData.projectId } : {}),
+        // Include projectId only if selected (empty string means no project)
+        ...(formData.projectId ? { projectId: formData.projectId } : {}),
       };
 
       if (editData) {
@@ -143,6 +144,28 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
               className="w-full px-4 py-2 bg-gray-50 dark:bg-charcoal border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors"
             />
           </div>
+
+          {/* Project Selection */}
+          {projects && projects.length > 0 && (
+            <div>
+              <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">المشروع (اختياري)</label>
+              <select
+                value={formData.projectId}
+                onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
+                className="w-full px-4 py-2 bg-gray-50 dark:bg-charcoal border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors"
+              >
+                <option value="">بدون مشروع</option>
+                {projects.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 dark:text-light-gray/50 mt-1">
+                يمكنك ربط هذا {type === 'expense' ? 'المصروف' : 'الإيراد'} بمشروع معين
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-4">
             <button

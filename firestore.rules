@@ -6,10 +6,30 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
     
+    // Helper function to check if current user is admin
+    function isAdmin() {
+      // Check if user document has isAdmin field set to true
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    // Helper function to check if user ID is in hardcoded admin list
+    function isHardcodedAdmin() {
+      return request.auth != null && 
+        (request.auth.uid == 'ikNkNLykEeUtXiecovWJSlVg2K33');
+    }
+    
+    // Combined admin check
+    function isAdminUser() {
+      return isAdmin() || isHardcodedAdmin();
+    }
+    
     // Expenses collection rules
     match /expenses/{expenseId} {
+      // Users can read their own expenses, admins can read all expenses
       allow read: if request.auth != null && 
-        (resource == null || resource.data.userId == request.auth.uid);
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
       
       allow create: if request.auth != null && 
         request.resource.data.userId == request.auth.uid;
@@ -20,8 +40,9 @@ service cloud.firestore {
     
     // Revenues collection rules
     match /revenues/{revenueId} {
+      // Users can read their own revenues, admins can read all revenues
       allow read: if request.auth != null && 
-        (resource == null || resource.data.userId == request.auth.uid);
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
       
       allow create: if request.auth != null && 
         request.resource.data.userId == request.auth.uid;
@@ -32,8 +53,9 @@ service cloud.firestore {
     
     // Projects collection rules
     match /projects/{projectId} {
+      // Users can read their own projects, admins can read all projects
       allow read: if request.auth != null && 
-        (resource == null || resource.data.userId == request.auth.uid);
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
       
       allow create: if request.auth != null && 
         request.resource.data.userId == request.auth.uid;
@@ -42,17 +64,44 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid;
     }
     
+    // Allow admins to list all expenses, revenues, and projects
+    match /expenses {
+      allow list: if request.auth != null && isAdminUser();
+    }
+    
+    match /revenues {
+      allow list: if request.auth != null && isAdminUser();
+    }
+    
+    match /projects {
+      allow list: if request.auth != null && isAdminUser();
+    }
+    
     // Users collection rules (for user preferences like currency)
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      // Users can read their own data, admins can read all users
+      allow read: if request.auth != null && 
+        (request.auth.uid == userId || isAdminUser());
       
-      allow create: if request.auth != null && request.auth.uid == userId &&
-        request.resource.data.userId == request.auth.uid;
+      // Users can create their own document, admins can create any user document
+      allow create: if request.auth != null && 
+        ((request.auth.uid == userId && request.resource.data.userId == request.auth.uid) ||
+         isAdminUser());
       
-      allow update: if request.auth != null && request.auth.uid == userId &&
-        resource.data.userId == request.auth.uid;
+      // Users can update their own data (but not isAdmin field), admins can update any user data
+      allow update: if request.auth != null && 
+        ((request.auth.uid == userId && 
+          resource.data.userId == request.auth.uid &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin'])) ||
+         (isAdminUser() && resource.data.userId == userId));
       
-      allow delete: if false; // Prevent deletion of user documents
+      // Allow admins to delete user documents
+      allow delete: if request.auth != null && isAdminUser();
+    }
+    
+    // Allow admins to list all users
+    match /users {
+      allow list: if request.auth != null && isAdminUser();
     }
     
     // Usernames collection rules (for username to email mapping)

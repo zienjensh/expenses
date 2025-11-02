@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useTransactions } from '../context/TransactionContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslation } from '../utils/i18n';
 import SEO from '../components/SEO';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Download, FileText, Calendar } from 'lucide-react';
@@ -8,9 +10,19 @@ import { Download, FileText, Calendar } from 'lucide-react';
 const Reports = () => {
   const { expenses, revenues } = useTransactions();
   const { currency } = useTheme();
+  const { language } = useLanguage();
+  const t = getTranslation(language);
   const [timeRange, setTimeRange] = useState('month');
 
   const COLORS = ['#E50914', '#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+  // Month names based on language
+  const monthNames = language === 'ar' 
+    ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+    : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  // Default category
+  const otherCategory = language === 'ar' ? 'أخرى' : 'Other';
 
   // Monthly comparison
   const monthlyComparison = useMemo(() => {
@@ -19,7 +31,7 @@ const Reports = () => {
     [...expenses, ...revenues].forEach(transaction => {
       const date = new Date(transaction.date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthName = date.toLocaleDateString('ar', { month: 'long', year: 'numeric' });
+      const monthName = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
       
       if (!dataMap[monthKey]) {
         dataMap[monthKey] = { month: monthName, expenses: 0, revenues: 0, net: 0 };
@@ -42,12 +54,12 @@ const Reports = () => {
     const revenueMap = {};
     
     expenses.forEach(expense => {
-      const cat = expense.category || 'أخرى';
+      const cat = expense.category || otherCategory;
       expenseMap[cat] = (expenseMap[cat] || 0) + (expense.amount || 0);
     });
     
     revenues.forEach(revenue => {
-      const cat = revenue.category || 'أخرى';
+      const cat = revenue.category || otherCategory;
       revenueMap[cat] = (revenueMap[cat] || 0) + (revenue.amount || 0);
     });
 
@@ -69,9 +81,9 @@ const Reports = () => {
 
   const handleExportCSV = () => {
     const csvData = [
-      ['النوع', 'المبلغ', 'الفئة', 'الوصف', 'التاريخ'],
-      ...expenses.map(e => ['مصروف', e.amount, e.category, e.description || '', e.date]),
-      ...revenues.map(r => ['إيراد', r.amount, r.category, r.description || '', r.date])
+      [t.type, t.amount, t.category, t.description, t.date],
+      ...expenses.map(e => [t.expenseTransaction, e.amount, e.category, e.description || '', e.date]),
+      ...revenues.map(r => [t.revenueTransaction, r.amount, r.category, r.description || '', r.date])
     ];
     
     const csv = csvData.map(row => row.join(',')).join('\n');
@@ -85,50 +97,50 @@ const Reports = () => {
   return (
     <>
       <SEO 
-        title="التقارير - تقارير مالية مفصلة"
-        description="احصل على تقارير مالية مفصلة وشاملة. تحليل المصروفات والإيرادات مع رسوم بيانية تفاعلية."
-        keywords="التقارير, تقارير مالية, تحليل مالي, إحصائيات"
+        title={`${t.reportsTitle} - ${t.appName}`}
+        description={language === 'ar' ? 'احصل على تقارير مالية مفصلة وشاملة. تحليل المصروفات والإيرادات مع رسوم بيانية تفاعلية.' : 'Get detailed and comprehensive financial reports. Analyze expenses and revenues with interactive charts.'}
+        keywords={language === 'ar' ? 'التقارير, تقارير مالية, تحليل مالي, إحصائيات' : 'reports, financial reports, financial analysis, statistics'}
       />
       <div className="space-y-6">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-900 dark:text-white mb-2">التقارير</h1>
-          <p className="text-gray-600 dark:text-gray-600 dark:text-light-gray/70">تحليل شامل للوضع المالي</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t.reportsTitle}</h1>
+          <p className="text-gray-600 dark:text-light-gray/70">{t.reportsDescription}</p>
         </div>
         <button
           onClick={handleExportCSV}
-          className="flex items-center gap-2 px-6 py-3 bg-fire-red hover:bg-fire-red/90 text-gray-900 dark:text-white rounded-lg transition-all glow-red"
+          className="flex items-center gap-2 px-6 py-3 bg-fire-red hover:bg-fire-red/90 text-white rounded-lg transition-all glow-red"
         >
           <Download size={20} />
-          <span>تصدير CSV</span>
+          <span>{t.exportCSV}</span>
         </button>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20">
-          <p className="text-gray-600 dark:text-light-gray/70 mb-2">إجمالي المصروفات</p>
+          <p className="text-gray-600 dark:text-light-gray/70 mb-2">{t.totalExpenses}</p>
           <p className="text-2xl font-bold text-fire-red">{summary.totalExpenses.toFixed(2)} {currency}</p>
         </div>
         <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20">
-          <p className="text-gray-600 dark:text-light-gray/70 mb-2">إجمالي الإيرادات</p>
+          <p className="text-gray-600 dark:text-light-gray/70 mb-2">{t.totalRevenues}</p>
           <p className="text-2xl font-bold text-green-500">{summary.totalRevenues.toFixed(2)} {currency}</p>
         </div>
         <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20">
-          <p className="text-gray-600 dark:text-light-gray/70 mb-2">صافي الدخل</p>
+          <p className="text-gray-600 dark:text-light-gray/70 mb-2">{t.netIncome}</p>
           <p className={`text-2xl font-bold ${summary.net >= 0 ? 'text-green-500' : 'text-fire-red'}`}>
             {summary.net.toFixed(2)} {currency}
           </p>
         </div>
         <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20">
-          <p className="text-gray-600 dark:text-light-gray/70 mb-2">نسبة المصروفات</p>
+          <p className="text-gray-600 dark:text-light-gray/70 mb-2">{t.expenseRatio}</p>
           <p className="text-2xl font-bold text-orange-500">{summary.expenseRatio.toFixed(1)}%</p>
         </div>
       </div>
 
       {/* Monthly Comparison */}
       <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">مقارنة شهرية</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t.monthlyComparison}</h2>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={monthlyComparison}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -143,9 +155,9 @@ const Reports = () => {
               }}
             />
             <Legend />
-            <Bar dataKey="revenues" fill="#22c55e" name="الإيرادات" />
-            <Bar dataKey="expenses" fill="#E50914" name="المصروفات" />
-            <Bar dataKey="net" fill="#3b82f6" name="صافي الدخل" />
+            <Bar dataKey="revenues" fill="#22c55e" name={t.revenuesCount} />
+            <Bar dataKey="expenses" fill="#E50914" name={t.expensesCount} />
+            <Bar dataKey="net" fill="#3b82f6" name={t.netIncomeLabel} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -153,7 +165,7 @@ const Reports = () => {
       {/* Category Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">توزيع المصروفات</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t.expenseDistribution}</h2>
           {categoryBreakdown.expenses.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -189,7 +201,7 @@ const Reports = () => {
         </div>
 
         <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">توزيع الإيرادات</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t.revenueDistribution}</h2>
           {categoryBreakdown.revenues.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -227,7 +239,7 @@ const Reports = () => {
 
       {/* Trend Chart */}
       <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">اتجاه الأداء المالي</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{t.financialPerformanceTrend}</h2>
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={monthlyComparison}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -242,9 +254,9 @@ const Reports = () => {
               }}
             />
             <Legend />
-            <Line type="monotone" dataKey="revenues" stroke="#22c55e" strokeWidth={3} name="الإيرادات" />
-            <Line type="monotone" dataKey="expenses" stroke="#E50914" strokeWidth={3} name="المصروفات" />
-            <Line type="monotone" dataKey="net" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" name="صافي الدخل" />
+            <Line type="monotone" dataKey="revenues" stroke="#22c55e" strokeWidth={3} name={t.revenuesCount} />
+            <Line type="monotone" dataKey="expenses" stroke="#E50914" strokeWidth={3} name={t.expensesCount} />
+            <Line type="monotone" dataKey="net" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" name={t.netIncomeLabel} />
           </LineChart>
         </ResponsiveContainer>
       </div>

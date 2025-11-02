@@ -9,7 +9,7 @@ const StatsCard = ({ title, value, icon: Icon, trend, color = 'fire-red' }) => {
   const iconClass = colorClasses[color] || colorClasses['fire-red'];
 
   return (
-    <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20 hover:border-fire-red/40 transition-all duration-300 glow-red hover:glow-red animate-fadeIn">
+    <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20 hover:border-fire-red/40 transition-all duration-300 glow-red hover:glow-red animate-fadeInUp card-hover">
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-lg ${iconClass}`}>
           <Icon size={24} />

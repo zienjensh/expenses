@@ -1,17 +1,46 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, Folder, FileText, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, Folder, FileText, Settings, Shield } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslation } from '../utils/i18n';
 
 const MobileNavBar = () => {
   const location = useLocation();
   const { theme } = useTheme();
+  const { currentUser, isAdmin } = useAuth();
+  const { language } = useLanguage();
+  const t = getTranslation(language);
+  const [adminStatus, setAdminStatus] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
 
+  // Check admin status
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (currentUser) {
+        try {
+          const admin = await isAdmin();
+          setAdminStatus(admin);
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+          setAdminStatus(false);
+        }
+      }
+      setCheckingAdmin(false);
+    };
+
+    checkAdmin();
+  }, [currentUser, isAdmin]);
+
+  // Build nav items array
   const navItems = [
-    { path: '/', icon: LayoutDashboard, label: 'التحكم' },
-    { path: '/expenses', icon: ArrowDownCircle, label: 'المصروفات' },
-    { path: '/revenues', icon: ArrowUpCircle, label: 'الإيرادات' },
-    { path: '/projects', icon: Folder, label: 'المشاريع' },
-    { path: '/settings', icon: Settings, label: 'الإعدادات' },
+    { path: '/', icon: LayoutDashboard, label: t.dashboard },
+    { path: '/expenses', icon: ArrowDownCircle, label: t.expenses },
+    { path: '/revenues', icon: ArrowUpCircle, label: t.revenues },
+    { path: '/projects', icon: Folder, label: t.projects },
+    ...(!checkingAdmin && adminStatus ? [{ path: '/admin', icon: Shield, label: t.admin }] : []),
+    { path: '/settings', icon: Settings, label: t.settings },
   ];
 
   return (

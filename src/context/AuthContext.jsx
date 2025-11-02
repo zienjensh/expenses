@@ -22,6 +22,47 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState(null);
+
+  // List of admin user IDs (can be modified based on your needs)
+  // You can also set isAdmin: true in the user document in Firestore instead
+  const ADMIN_USER_IDS = [
+    'ikNkNLykEeUtXiecovWJSlVg2K33',
+  ];
+
+  // Check if current user is admin
+  const checkIsAdmin = async () => {
+    if (!currentUser) return false;
+    
+    try {
+      // First check if user document has isAdmin field
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        // Check isAdmin field in user document
+        if (userData.isAdmin === true) {
+          return true;
+        }
+      }
+      
+      // Fallback: Check against hardcoded admin list
+      if (ADMIN_USER_IDS.includes(currentUser.uid)) {
+        return true;
+      }
+      
+      // Fallback: Check by email (if needed)
+      // if (ADMIN_EMAILS.includes(currentUser.email)) {
+      //   return true;
+      // }
+      
+      return false;
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+  };
 
   // Check if username exists
   const checkUsernameExists = async (username) => {
@@ -138,8 +179,24 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      
+      // Fetch user data from Firestore if user is logged in
+      if (user) {
+        try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            setUserData(userDocSnap.data());
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      } else {
+        setUserData(null);
+      }
+      
       setLoading(false);
     });
 
@@ -148,11 +205,13 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
+    userData,
     signup,
     login,
     logout,
     loading,
-    checkUsernameExists
+    checkUsernameExists,
+    isAdmin: checkIsAdmin
   };
 
   return (

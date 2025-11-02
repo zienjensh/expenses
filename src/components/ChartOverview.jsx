@@ -1,13 +1,27 @@
 import { useMemo } from 'react';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslation } from '../utils/i18n';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const ChartOverview = ({ expenses, revenues }) => {
+  const { language } = useLanguage();
+  const t = getTranslation(language);
+  
+  // Month names based on language
+  const monthNames = language === 'ar' 
+    ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+    : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  
+  // Default category for unknown
+  const otherCategory = language === 'ar' ? 'أخرى' : 'Other';
+
   // Monthly data
   const monthlyData = useMemo(() => {
     const dataMap = {};
     
     [...expenses, ...revenues].forEach(transaction => {
-      const month = new Date(transaction.date).toLocaleDateString('ar', { month: 'long', year: 'numeric' });
+      const date = new Date(transaction.date);
+      const month = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
       if (!dataMap[month]) {
         dataMap[month] = { month, expenses: 0, revenues: 0 };
       }
@@ -26,7 +40,7 @@ const ChartOverview = ({ expenses, revenues }) => {
     const categoryMap = {};
     
     expenses.forEach(expense => {
-      const category = expense.category || 'أخرى';
+      const category = expense.category || otherCategory;
       categoryMap[category] = (categoryMap[category] || 0) + (expense.amount || 0);
     });
 
@@ -39,7 +53,7 @@ const ChartOverview = ({ expenses, revenues }) => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Monthly Comparison Chart */}
       <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">الإيرادات والمصروفات الشهرية</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t.monthlyRevenuesExpenses}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -54,15 +68,15 @@ const ChartOverview = ({ expenses, revenues }) => {
               }}
             />
             <Legend />
-            <Bar dataKey="revenues" fill="#22c55e" name="الإيرادات" />
-            <Bar dataKey="expenses" fill="#E50914" name="المصروفات" />
+            <Bar dataKey="revenues" fill="#22c55e" name={t.revenuesCount} />
+            <Bar dataKey="expenses" fill="#E50914" name={t.expensesCount} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       {/* Category Distribution */}
       <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">توزيع المصروفات حسب الفئة</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t.expenseDistributionByCategory}</h3>
         {categoryData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -92,14 +106,14 @@ const ChartOverview = ({ expenses, revenues }) => {
           </ResponsiveContainer>
         ) : (
           <div className="flex items-center justify-center h-[300px] text-gray-500 dark:text-light-gray/50">
-            لا توجد بيانات لعرضها
+            {t.noDataToDisplay}
           </div>
         )}
       </div>
 
       {/* Trend Line Chart */}
       <div className="bg-white dark:bg-charcoal/50 rounded-xl p-6 border border-gray-200 dark:border-fire-red/20 lg:col-span-2">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">اتجاه الإيرادات والمصروفات</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t.revenueExpenseTrend}</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={monthlyData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
@@ -114,8 +128,8 @@ const ChartOverview = ({ expenses, revenues }) => {
               }}
             />
             <Legend />
-            <Line type="monotone" dataKey="revenues" stroke="#22c55e" strokeWidth={2} name="الإيرادات" />
-            <Line type="monotone" dataKey="expenses" stroke="#E50914" strokeWidth={2} name="المصروفات" />
+            <Line type="monotone" dataKey="revenues" stroke="#22c55e" strokeWidth={2} name={t.revenuesCount} />
+            <Line type="monotone" dataKey="expenses" stroke="#E50914" strokeWidth={2} name={t.expensesCount} />
           </LineChart>
         </ResponsiveContainer>
       </div>

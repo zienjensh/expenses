@@ -3,12 +3,16 @@ import { X, DollarSign, Tag, Calendar, CreditCard, FileText, Folder, Loader2 } f
 import { useTransactions } from '../context/TransactionContext';
 import { useProjects } from '../context/ProjectsContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslation } from '../utils/i18n';
 import toast from 'react-hot-toast';
 
 const AddTransactionModal = ({ type, onClose, editData = null, projectId = null }) => {
   const { addExpense, addRevenue, updateExpense, updateRevenue } = useTransactions();
   const { projects } = useProjects();
   const { theme } = useTheme();
+  const { language } = useLanguage();
+  const t = getTranslation(language);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const modalRef = useRef(null);
@@ -17,16 +21,25 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
     amount: editData?.amount || '',
     category: editData?.category || '',
     description: editData?.description || '',
-    type: editData?.type || (type === 'expense' ? 'ثابت' : ''),
-    paymentMethod: editData?.paymentMethod || 'نقدي',
+    type: editData?.type || (type === 'expense' ? (language === 'ar' ? 'ثابت' : 'Fixed') : ''),
+    paymentMethod: editData?.paymentMethod || (language === 'ar' ? 'نقدي' : 'Cash'),
     date: editData?.date || new Date().toISOString().split('T')[0],
     projectId: editData?.projectId || projectId || '',
   });
 
-  const expenseCategories = ['طعام', 'مواصلات', 'صحة', 'ترفيه', 'فواتير', 'تسوق', 'أخرى'];
-  const revenueCategories = ['راتب', 'استثمار', 'هدية', 'أخرى'];
-  const expenseTypes = ['ثابت', 'متغير', 'طوارئ'];
-  const paymentMethods = ['نقدي', 'بطاقة ائتمان', 'تحويل بنكي', 'محفظة إلكترونية'];
+  // Categories and options based on language
+  const expenseCategories = language === 'ar' 
+    ? ['طعام', 'مواصلات', 'صحة', 'ترفيه', 'فواتير', 'تسوق', 'أخرى']
+    : ['Food', 'Transportation', 'Health', 'Entertainment', 'Bills', 'Shopping', 'Other'];
+  const revenueCategories = language === 'ar'
+    ? ['راتب', 'استثمار', 'هدية', 'أخرى']
+    : ['Salary', 'Investment', 'Gift', 'Other'];
+  const expenseTypes = language === 'ar'
+    ? ['ثابت', 'متغير', 'طوارئ']
+    : ['Fixed', 'Variable', 'Emergency'];
+  const paymentMethods = language === 'ar'
+    ? ['نقدي', 'بطاقة ائتمان', 'تحويل بنكي', 'محفظة إلكترونية']
+    : ['Cash', 'Credit Card', 'Bank Transfer', 'E-Wallet'];
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -51,15 +64,15 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
     const newErrors = {};
     
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      newErrors.amount = 'المبلغ مطلوب ويجب أن يكون أكبر من صفر';
+      newErrors.amount = language === 'ar' ? 'المبلغ مطلوب ويجب أن يكون أكبر من صفر' : 'Amount is required and must be greater than zero';
     }
     
     if (!formData.category) {
-      newErrors.category = 'الفئة مطلوبة';
+      newErrors.category = t.categoryRequired;
     }
     
     if (!formData.date) {
-      newErrors.date = 'التاريخ مطلوب';
+      newErrors.date = language === 'ar' ? 'التاريخ مطلوب' : 'Date is required';
     }
 
     setErrors(newErrors);
@@ -70,7 +83,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
     e.preventDefault();
     
     if (!validateForm()) {
-      toast.error('يرجى إكمال جميع الحقول المطلوبة');
+      toast.error(language === 'ar' ? 'يرجى إكمال جميع الحقول المطلوبة' : 'Please complete all required fields');
       return;
     }
 
@@ -88,25 +101,25 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
       if (editData) {
         if (type === 'expense') {
           await updateExpense(editData.id, transactionData);
-          toast.success('تم تحديث المصروف بنجاح');
+          toast.success(t.updated);
         } else {
           await updateRevenue(editData.id, transactionData);
-          toast.success('تم تحديث الإيراد بنجاح');
+          toast.success(t.updated);
         }
       } else {
         if (type === 'expense') {
           await addExpense(transactionData);
-          toast.success('تم إضافة المصروف بنجاح');
+          toast.success(t.created);
         } else {
           await addRevenue(transactionData);
-          toast.success('تم إضافة الإيراد بنجاح');
+          toast.success(t.created);
         }
       }
 
       onClose();
     } catch (error) {
       console.error('Error saving transaction:', error);
-      toast.error('حدث خطأ أثناء الحفظ. يرجى المحاولة مرة أخرى');
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء الحفظ. يرجى المحاولة مرة أخرى' : 'An error occurred while saving. Please try again');
     } finally {
       setIsSubmitting(false);
     }
@@ -156,12 +169,14 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
               <h2 className={`text-2xl font-bold ${
                 theme === 'dark' ? 'text-white' : 'text-gray-900'
               }`}>
-                {editData ? 'تعديل' : 'إضافة'} {type === 'expense' ? 'مصروف' : 'إيراد'}
+                {editData ? t.edit : t.add} {type === 'expense' ? t.expense : t.revenue}
               </h2>
               <p className={`text-sm ${
                 theme === 'dark' ? 'text-light-gray/70' : 'text-gray-600'
               }`}>
-                {editData ? 'قم بتحديث المعلومات' : 'املأ البيانات لإضافة معاملة جديدة'}
+                {editData 
+                  ? (language === 'ar' ? 'قم بتحديث المعلومات' : 'Update the information')
+                  : (language === 'ar' ? 'املأ البيانات لإضافة معاملة جديدة' : 'Fill in the data to add a new transaction')}
               </p>
             </div>
           </div>
@@ -189,7 +204,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
               theme === 'dark' ? 'text-white' : 'text-gray-900'
             }`}>
               <DollarSign size={20} className="text-fire-red" />
-              المعلومات الأساسية
+              {language === 'ar' ? 'المعلومات الأساسية' : 'Basic Information'}
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -199,7 +214,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                   theme === 'dark' ? 'text-light-gray' : 'text-gray-700'
                 }`}>
                   <DollarSign size={16} className="text-fire-red" />
-                  المبلغ *
+                  {t.amount} *
                 </label>
                 <input
                   type="number"
@@ -231,7 +246,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                   theme === 'dark' ? 'text-light-gray' : 'text-gray-700'
                 }`}>
                   <Tag size={16} className="text-fire-red" />
-                  الفئة *
+                  {t.category} *
                 </label>
                 <select
                   required
@@ -255,7 +270,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                   <option value="" style={{
                     backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
                     color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
-                  }}>اختر الفئة</option>
+                  }}>{t.selectCategory}</option>
                   {(type === 'expense' ? expenseCategories : revenueCategories).map(cat => (
                     <option key={cat} value={cat} style={{
                       backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
@@ -280,7 +295,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
               theme === 'dark' ? 'text-white' : 'text-gray-900'
             }`}>
               <CreditCard size={20} className="text-fire-red" />
-              تفاصيل المعاملة
+              {language === 'ar' ? 'تفاصيل المعاملة' : 'Transaction Details'}
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -289,7 +304,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                   <label className={`block text-sm font-medium mb-2 ${
                     theme === 'dark' ? 'text-light-gray' : 'text-gray-700'
                   }`}>
-                    نوع المصروف
+                    {t.expenseType}
                   </label>
                   <select
                     value={formData.type}
@@ -319,7 +334,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                   theme === 'dark' ? 'text-light-gray' : 'text-gray-700'
                 }`}>
                   <CreditCard size={16} className="text-fire-red" />
-                  طريقة الدفع
+                  {t.paymentMethod}
                 </label>
                 <select
                   value={formData.paymentMethod}
@@ -350,7 +365,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                 theme === 'dark' ? 'text-light-gray' : 'text-gray-700'
               }`}>
                 <Calendar size={16} className="text-fire-red" />
-                التاريخ *
+                {t.date} *
               </label>
               <input
                 type="date"
@@ -384,7 +399,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
               theme === 'dark' ? 'text-white' : 'text-gray-900'
             }`}>
               <FileText size={20} className="text-fire-red" />
-              معلومات إضافية
+              {language === 'ar' ? 'معلومات إضافية' : 'Additional Information'}
             </h3>
 
             {/* Description */}
@@ -392,7 +407,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
               <label className={`block text-sm font-medium mb-2 ${
                 theme === 'dark' ? 'text-light-gray' : 'text-gray-700'
               }`}>
-                الوصف
+                {t.description}
               </label>
               <textarea
                 value={formData.description}
@@ -403,7 +418,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                     ? 'bg-white/5 border-fire-red/20 text-white placeholder:text-gray-500 focus:border-fire-red focus:bg-white/10'
                     : 'bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-fire-red focus:bg-white'
                 } focus:outline-none focus:ring-2 focus:ring-fire-red/20`}
-                placeholder="أضف وصفاً أو ملاحظات (اختياري)"
+                placeholder={language === 'ar' ? 'أضف وصفاً أو ملاحظات (اختياري)' : 'Add description or notes (optional)'}
               />
             </div>
 
@@ -414,7 +429,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                   theme === 'dark' ? 'text-light-gray' : 'text-gray-700'
                 }`}>
                   <Folder size={16} className="text-fire-red" />
-                  المشروع (اختياري)
+                  {t.project} ({t.optional})
                 </label>
                 <select
                   value={formData.projectId}
@@ -432,7 +447,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                   <option value="" style={{
                     backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
                     color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
-                  }}>بدون مشروع</option>
+                  }}>{language === 'ar' ? 'بدون مشروع' : 'No Project'}</option>
                   {projects.map(project => (
                     <option key={project.id} value={project.id} style={{
                       backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
@@ -445,7 +460,9 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                 <p className={`text-xs mt-1.5 ${
                   theme === 'dark' ? 'text-light-gray/60' : 'text-gray-500'
                 }`}>
-                  يمكنك ربط هذا {type === 'expense' ? 'المصروف' : 'الإيراد'} بمشروع معين لتتبع أفضل
+                  {language === 'ar' 
+                    ? `يمكنك ربط هذا ${type === 'expense' ? 'المصروف' : 'الإيراد'} بمشروع معين لتتبع أفضل`
+                    : `You can link this ${type === 'expense' ? 'expense' : 'revenue'} to a specific project for better tracking`}
                 </p>
               </div>
             )}
@@ -463,7 +480,7 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              إلغاء
+              {t.cancel}
             </button>
             <button
               type="submit"
@@ -477,11 +494,11 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
               {isSubmitting ? (
                 <>
                   <Loader2 size={20} className="animate-spin" />
-                  <span>جاري الحفظ...</span>
+                  <span>{t.loading}</span>
                 </>
               ) : (
                 <>
-                  {editData ? 'تحديث' : 'إضافة'}
+                  {editData ? t.save : t.add}
                 </>
               )}
             </button>

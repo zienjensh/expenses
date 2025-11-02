@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslation } from '../utils/i18n';
 import SEO from '../components/SEO';
 import { User, Mail, Moon, Sun, DollarSign, LogOut, Save, Settings as SettingsIcon, CreditCard, Palette, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -9,23 +11,25 @@ import { updateProfile } from 'firebase/auth';
 const Settings = () => {
   const { currentUser, logout } = useAuth();
   const { theme, toggleTheme, currencyCode, setCurrency } = useTheme();
+  const { language } = useLanguage();
+  const t = getTranslation(language);
   const [displayName, setDisplayName] = useState(currentUser?.displayName || '');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleUpdateProfile = async () => {
     if (!displayName.trim()) {
-      toast.error('يرجى إدخال اسم صحيح');
+      toast.error(t.nameRequired);
       return;
     }
     setIsSaving(true);
     try {
       if (currentUser) {
         await updateProfile(currentUser, { displayName: displayName.trim() });
-        toast.success('تم تحديث الملف الشخصي بنجاح');
+        toast.success(language === 'ar' ? 'تم تحديث الملف الشخصي بنجاح' : 'Profile updated successfully');
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('فشل في تحديث الملف الشخصي');
+      toast.error(language === 'ar' ? 'فشل في تحديث الملف الشخصي' : 'Failed to update profile');
     } finally {
       setIsSaving(false);
     }
@@ -33,25 +37,25 @@ const Settings = () => {
 
   const handleCurrencyChange = (newCurrency) => {
     setCurrency(newCurrency);
-    toast.success('تم تحديث العملة بنجاح');
+    toast.success(language === 'ar' ? 'تم تحديث العملة بنجاح' : 'Currency updated successfully');
   };
 
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('تم تسجيل الخروج بنجاح');
+      toast.success(t.logoutSuccess);
     } catch (error) {
       console.error('Error logging out:', error);
-      toast.error('فشل في تسجيل الخروج');
+      toast.error(t.logoutError);
     }
   };
 
   return (
     <>
       <SEO 
-        title="الإعدادات - تخصيص حسابك"
-        description="قم بتخصيص إعدادات حسابك. اختر العملة، الوضع الداكن/الفاتح، وغيرها من الخيارات."
-        keywords="الإعدادات, تخصيص, إعدادات الحساب"
+        title={`${t.settingsTitle} - ${t.appName}`}
+        description={language === 'ar' ? 'قم بتخصيص إعدادات حسابك. اختر العملة، الوضع الداكن/الفاتح، وغيرها من الخيارات.' : 'Customize your account settings. Choose currency, dark/light mode, and other options.'}
+        keywords={language === 'ar' ? 'الإعدادات, تخصيص, إعدادات الحساب' : 'settings, customize, account settings'}
         noindex={true}
       />
       <div className="space-y-6 animate-fadeIn">
@@ -66,8 +70,8 @@ const Settings = () => {
             <SettingsIcon size={32} className="text-fire-red" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">الإعدادات</h1>
-            <p className="text-gray-600 dark:text-light-gray/70">إدارة إعداداتك وتفضيلاتك الشخصية</p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{t.settingsTitle}</h1>
+            <p className="text-gray-600 dark:text-light-gray/70">{language === 'ar' ? 'إدارة إعداداتك وتفضيلاتك الشخصية' : 'Manage your settings and personal preferences'}</p>
           </div>
         </div>
       </div>
@@ -97,8 +101,8 @@ const Settings = () => {
                 <User size={24} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">الملف الشخصي</h2>
-                <p className="text-sm text-gray-600 dark:text-light-gray/70">إدارة معلوماتك الشخصية</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t.profile}</h2>
+                <p className="text-sm text-gray-600 dark:text-light-gray/70">{language === 'ar' ? 'إدارة معلوماتك الشخصية' : 'Manage your personal information'}</p>
               </div>
             </div>
 
@@ -106,21 +110,21 @@ const Settings = () => {
               {/* Display Name Input */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-light-gray/90 mb-2.5">
-                  الاسم
+                  {t.displayName}
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className={`w-full px-4 py-3 pr-12 rounded-xl border transition-all duration-300 ${
+                    className={`w-full px-4 py-3 ${language === 'ar' ? 'pr-12' : 'pl-12'} rounded-xl border transition-all duration-300 ${
                       theme === 'dark'
                         ? 'bg-white/5 border-fire-red/20 text-white placeholder:text-gray-500 focus:border-fire-red focus:bg-white/10'
                         : 'bg-gray-50/50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-fire-red focus:bg-white'
                     } focus:outline-none focus:ring-2 focus:ring-fire-red/20`}
-                    placeholder="أدخل اسمك"
+                    placeholder={language === 'ar' ? 'أدخل اسمك' : 'Enter your name'}
                   />
-                  <User size={18} className={`absolute right-4 top-1/2 transform -translate-y-1/2 ${
+                  <User size={18} className={`absolute ${language === 'ar' ? 'right-4' : 'left-4'} top-1/2 transform -translate-y-1/2 ${
                     theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
                   }`} />
                 </div>
@@ -129,7 +133,7 @@ const Settings = () => {
               {/* Email Display */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-light-gray/90 mb-2.5">
-                  البريد الإلكتروني
+                  {t.email}
                 </label>
                 <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
                   theme === 'dark'
@@ -149,7 +153,7 @@ const Settings = () => {
                       ? 'bg-fire-red/20 text-fire-red'
                       : 'bg-fire-red/10 text-fire-red'
                   }`}>
-                    محمي
+                    {language === 'ar' ? 'محمي' : 'Protected'}
                   </span>
                 </div>
               </div>
@@ -172,7 +176,7 @@ const Settings = () => {
                   isSaving ? 'animate-spin' : 'group-hover:rotate-12'
                 }`} />
                 <span className="font-semibold">
-                  {isSaving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                  {isSaving ? t.loading : (language === 'ar' ? 'حفظ التغييرات' : 'Save Changes')}
                 </span>
               </button>
             </div>
@@ -200,8 +204,8 @@ const Settings = () => {
                 <Palette size={24} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">التفضيلات</h2>
-                <p className="text-sm text-gray-600 dark:text-light-gray/70">تخصيص تجربتك</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{language === 'ar' ? 'التفضيلات' : 'Preferences'}</h2>
+                <p className="text-sm text-gray-600 dark:text-light-gray/70">{language === 'ar' ? 'تخصيص تجربتك' : 'Customize your experience'}</p>
               </div>
             </div>
 
@@ -223,10 +227,12 @@ const Settings = () => {
                     </div>
                     <div>
                       <p className="text-gray-900 dark:text-white font-semibold mb-1">
-                        الوضع {theme === 'dark' ? 'الداكن' : 'الفاتح'}
+                        {t.theme}: {theme === 'dark' ? t.darkMode : t.lightMode}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-light-gray/70">
-                        {theme === 'dark' ? 'مريح للعين في الإضاءة المنخفضة' : 'واضح ومناسب للاستخدام النهاري'}
+                        {theme === 'dark' 
+                          ? (language === 'ar' ? 'مريح للعين في الإضاءة المنخفضة' : 'Eye-friendly in low light')
+                          : (language === 'ar' ? 'واضح ومناسب للاستخدام النهاري' : 'Clear and suitable for daytime use')}
                       </p>
                     </div>
                   </div>
@@ -270,10 +276,10 @@ const Settings = () => {
                     </div>
                     <div>
                       <p className="text-gray-900 dark:text-white font-semibold mb-1">
-                        العملة الافتراضية
+                        {language === 'ar' ? 'العملة الافتراضية' : 'Default Currency'}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-light-gray/70">
-                        اختر العملة المستخدمة في العرض
+                        {language === 'ar' ? 'اختر العملة المستخدمة في العرض' : 'Choose the currency used in display'}
                       </p>
                     </div>
                   </div>
@@ -297,7 +303,7 @@ const Settings = () => {
                         color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
                       }}
                     >
-                      ريال سعودي (ر.س)
+                      {language === 'ar' ? 'ريال سعودي (ر.س)' : 'Saudi Riyal (SAR)'}
                     </option>
                     <option 
                       value="$"
@@ -306,7 +312,7 @@ const Settings = () => {
                         color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
                       }}
                     >
-                      دولار ($)
+                      {language === 'ar' ? 'دولار ($)' : 'US Dollar ($)'}
                     </option>
                     <option 
                       value="€"
@@ -315,7 +321,7 @@ const Settings = () => {
                         color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
                       }}
                     >
-                      يورو (€)
+                      {language === 'ar' ? 'يورو (€)' : 'Euro (€)'}
                     </option>
                     <option 
                       value="GBP"
@@ -324,7 +330,7 @@ const Settings = () => {
                         color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
                       }}
                     >
-                      جنيه مصري (ج.م)
+                      {language === 'ar' ? 'جنيه مصري (ج.م)' : 'Egyptian Pound (EGP)'}
                     </option>
                     <option 
                       value="د.إ"
@@ -333,7 +339,7 @@ const Settings = () => {
                         color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
                       }}
                     >
-                      درهم إماراتي (د.إ)
+                      {language === 'ar' ? 'درهم إماراتي (د.إ)' : 'UAE Dirham (AED)'}
                     </option>
                   </select>
                 </div>
@@ -366,8 +372,8 @@ const Settings = () => {
                 <Shield size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">الأمان</h2>
-                <p className="text-xs text-gray-600 dark:text-light-gray/70">إدارة الحساب</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{language === 'ar' ? 'الأمان' : 'Security'}</h2>
+                <p className="text-xs text-gray-600 dark:text-light-gray/70">{language === 'ar' ? 'إدارة الحساب' : 'Account Management'}</p>
               </div>
             </div>
 
@@ -380,7 +386,7 @@ const Settings = () => {
               }`}
             >
               <LogOut size={18} className="transition-transform duration-300 group-hover:rotate-[-15deg]" />
-              <span className="font-semibold">تسجيل الخروج</span>
+              <span className="font-semibold">{t.logout}</span>
             </button>
           </div>
 
@@ -406,7 +412,7 @@ const Settings = () => {
                 {currentUser?.displayName?.[0]?.toUpperCase() || currentUser?.email?.[0]?.toUpperCase() || 'U'}
               </div>
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                {currentUser?.displayName || 'المستخدم'}
+                {currentUser?.displayName || t.user}
               </h3>
               <p className="text-sm text-gray-600 dark:text-light-gray/70 mb-4">
                 {currentUser?.email}
@@ -417,7 +423,7 @@ const Settings = () => {
                   : 'bg-green-500/10 text-green-600 border border-green-500/20'
               }`}>
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                متصل
+                {language === 'ar' ? 'متصل' : 'Connected'}
               </div>
             </div>
           </div>

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useProjects } from '../context/ProjectsContext';
 import { useTransactions } from '../context/TransactionContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslation } from '../utils/i18n';
 import SEO from '../components/SEO';
 import { FolderPlus, Folder, X, Edit2, Trash2, ArrowLeft, Plus, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import AddTransactionModal from '../components/AddTransactionModal';
@@ -12,6 +14,21 @@ const Projects = () => {
   const { projects, addProject, updateProject, deleteProject, loading: projectsLoading } = useProjects();
   const { expenses, revenues, deleteExpense, deleteRevenue } = useTransactions();
   const { currency, theme } = useTheme();
+  const { language } = useLanguage();
+  const t = getTranslation(language);
+
+  // Month names based on language
+  const monthNames = language === 'ar' 
+    ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+    : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const formatDateArabic = (date) => {
+    const dateObj = new Date(date);
+    const day = dateObj.getDate();
+    const month = monthNames[dateObj.getMonth()];
+    const year = dateObj.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
   
   // Debug: Log projects state
   console.log('Projects component - projects:', projects);
@@ -137,7 +154,7 @@ const Projects = () => {
   if (projectsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-fire-red text-2xl">جاري التحميل...</div>
+        <div className="text-fire-red text-2xl">{t.loading}</div>
       </div>
     );
   }
@@ -160,7 +177,7 @@ const Projects = () => {
             </button>
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{selectedProject.name}</h1>
-              <p className="text-gray-600 dark:text-light-gray/70">تفاصيل المشروع</p>
+              <p className="text-gray-600 dark:text-light-gray/70">{language === 'ar' ? 'تفاصيل المشروع' : 'Project Details'}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -177,7 +194,7 @@ const Projects = () => {
               }`}
             >
               <Edit2 size={18} />
-              <span>تعديل</span>
+              <span>{t.edit}</span>
             </button>
             <button
               onClick={() => {
@@ -187,7 +204,7 @@ const Projects = () => {
               className="flex items-center gap-2 px-4 py-2 bg-fire-red/10 hover:bg-fire-red/20 text-fire-red rounded-lg transition-all border border-fire-red/30"
             >
               <Trash2 size={18} />
-              <span>حذف</span>
+              <span>{t.delete}</span>
             </button>
           </div>
         </div>
@@ -201,12 +218,12 @@ const Projects = () => {
           }`}>
             <div className="flex items-center gap-3 mb-2">
               <ArrowDownCircle className="text-fire-red" size={24} />
-              <h3 className="text-gray-600 dark:text-light-gray/70">إجمالي المصروفات</h3>
+              <h3 className="text-gray-600 dark:text-light-gray/70">{t.totalExpenses}</h3>
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
               {projectStats.totalExpenses.toFixed(2)} {currency}
             </p>
-            <p className="text-sm text-gray-500 mt-1">{projectStats.expensesCount} معاملة</p>
+            <p className="text-sm text-gray-500 mt-1">{projectStats.expensesCount} {t.transactionsCount}</p>
           </div>
           <div className={`p-6 rounded-xl border ${
             theme === 'dark'
@@ -215,12 +232,12 @@ const Projects = () => {
           }`}>
             <div className="flex items-center gap-3 mb-2">
               <ArrowUpCircle className="text-green-500" size={24} />
-              <h3 className="text-gray-600 dark:text-light-gray/70">إجمالي الإيرادات</h3>
+              <h3 className="text-gray-600 dark:text-light-gray/70">{t.totalRevenues}</h3>
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
               {projectStats.totalRevenues.toFixed(2)} {currency}
             </p>
-            <p className="text-sm text-gray-500 mt-1">{projectStats.revenuesCount} معاملة</p>
+            <p className="text-sm text-gray-500 mt-1">{projectStats.revenuesCount} {t.transactionsCount}</p>
           </div>
           <div className={`p-6 rounded-xl border ${
             theme === 'dark'
@@ -235,7 +252,7 @@ const Projects = () => {
                   projectStats.netIncome >= 0 ? 'bg-green-500' : 'bg-fire-red'
                 }`} />
               </div>
-              <h3 className="text-gray-600 dark:text-light-gray/70">صافي الدخل</h3>
+              <h3 className="text-gray-600 dark:text-light-gray/70">{t.netIncome}</h3>
             </div>
             <p className={`text-2xl font-bold ${
               projectStats.netIncome >= 0 ? 'text-green-500' : 'text-fire-red'
@@ -252,14 +269,14 @@ const Projects = () => {
             className="flex items-center gap-2 px-6 py-3 bg-fire-red hover:bg-fire-red/90 text-white rounded-lg transition-all"
           >
             <Plus size={20} />
-            <span>إضافة مصروف</span>
+            <span>{t.addExpense}</span>
           </button>
           <button
             onClick={() => setShowRevenueModal(true)}
             className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all"
           >
             <Plus size={20} />
-            <span>إضافة إيراد</span>
+            <span>{t.addRevenue}</span>
           </button>
         </div>
 
@@ -273,10 +290,10 @@ const Projects = () => {
           }`}>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <ArrowDownCircle className="text-fire-red" size={24} />
-              المصروفات
+              {t.expensesCount}
             </h2>
             {projectExpenses.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">لا توجد مصروفات</p>
+              <p className="text-gray-500 text-center py-8">{t.noExpenses}</p>
             ) : (
               <div className="space-y-3">
                 {projectExpenses.map((expense) => (
@@ -308,7 +325,7 @@ const Projects = () => {
                           </p>
                         )}
                         <p className="text-xs text-gray-500">
-                          {expense.date ? format(new Date(expense.date), 'dd/MM/yyyy') : ''}
+                          {expense.date ? formatDateArabic(expense.date) : ''}
                         </p>
                       </div>
                       <button
@@ -371,7 +388,7 @@ const Projects = () => {
                           </p>
                         )}
                         <p className="text-xs text-gray-500">
-                          {revenue.date ? format(new Date(revenue.date), 'dd/MM/yyyy') : ''}
+                          {revenue.date ? formatDateArabic(revenue.date) : ''}
                         </p>
                       </div>
                       <button
@@ -417,7 +434,7 @@ const Projects = () => {
                 : 'bg-white border-gray-200'
             }`}>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">تعديل المشروع</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{language === 'ar' ? 'تعديل المشروع' : 'Edit Project'}</h2>
                 <button
                   onClick={() => {
                     setShowEditModal(false);
@@ -431,7 +448,7 @@ const Projects = () => {
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">اسم المشروع *</label>
+                  <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">{t.projectName} *</label>
                   <input
                     type="text"
                     value={projectName}
@@ -441,7 +458,7 @@ const Projects = () => {
                         ? 'bg-charcoal border-fire-red/20 text-white'
                         : 'bg-gray-50 border-gray-200 text-gray-900'
                     } focus:outline-none focus:border-fire-red transition-colors`}
-                    placeholder="أدخل اسم المشروع"
+                    placeholder={language === 'ar' ? 'أدخل اسم المشروع' : 'Enter project name'}
                   />
                 </div>
                 <div className="flex gap-3 pt-4">
@@ -458,13 +475,13 @@ const Projects = () => {
                         : 'bg-gray-300 hover:bg-gray-400 text-gray-900'
                     }`}
                   >
-                    إلغاء
+                    {t.cancel}
                   </button>
                   <button
                     onClick={handleEditProject}
                     className="flex-1 px-4 py-2 bg-fire-red hover:bg-fire-red/90 text-white rounded-lg transition-all"
                   >
-                    تحديث
+                    {t.save}
                   </button>
                 </div>
               </div>
@@ -474,11 +491,11 @@ const Projects = () => {
 
         {showDeleteDialog && (
           <ConfirmDialog
-            title={transactionToDelete ? 'حذف المعاملة' : 'حذف المشروع'}
+            title={transactionToDelete ? (language === 'ar' ? 'حذف المعاملة' : 'Delete Transaction') : (language === 'ar' ? 'حذف المشروع' : 'Delete Project')}
             message={
               transactionToDelete
-                ? 'هل أنت متأكد من حذف هذه المعاملة؟'
-                : 'هل أنت متأكد من حذف هذا المشروع؟ سيتم حذف جميع المصروفات والإيرادات المرتبطة به.'
+                ? (language === 'ar' ? 'هل أنت متأكد من حذف هذه المعاملة؟' : 'Are you sure you want to delete this transaction?')
+                : (language === 'ar' ? 'هل أنت متأكد من حذف هذا المشروع؟ سيتم حذف جميع المصروفات والإيرادات المرتبطة به.' : 'Are you sure you want to delete this project? All associated expenses and revenues will be deleted.')
             }
             onConfirm={transactionToDelete ? handleDeleteTransaction : handleDeleteProject}
             onCancel={() => {
@@ -502,8 +519,8 @@ const Projects = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">المشاريع</h1>
-            <p className="text-gray-600 dark:text-light-gray/70">إدارة مشاريعك وملفاتها</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t.projectsTitle}</h1>
+            <p className="text-gray-600 dark:text-light-gray/70">{language === 'ar' ? 'إدارة مشاريعك وملفاتها' : 'Manage your projects and files'}</p>
           </div>
         <button
           onClick={() => {
@@ -513,7 +530,7 @@ const Projects = () => {
           className="flex items-center gap-2 px-6 py-3 bg-fire-red hover:bg-fire-red/90 text-white rounded-lg transition-all"
         >
           <FolderPlus size={20} />
-          <span>مشروع جديد</span>
+          <span>{t.createProject}</span>
         </button>
       </div>
 
@@ -525,10 +542,10 @@ const Projects = () => {
         }`}>
           <Folder size={64} className="mx-auto text-gray-400 mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            لا توجد مشاريع
+            {t.noProjects}
           </h3>
           <p className="text-gray-600 dark:text-light-gray/70 mb-6">
-            ابدأ بإنشاء مشروع جديد لإدارة مصروفاتك وإيراداتك
+            {t.createProjectDescription}
           </p>
           <button
             onClick={() => {
@@ -538,7 +555,7 @@ const Projects = () => {
             className="inline-flex items-center gap-2 px-6 py-3 bg-fire-red hover:bg-fire-red/90 text-white rounded-lg transition-all"
           >
             <FolderPlus size={20} />
-            <span>إنشاء مشروع</span>
+            <span>{language === 'ar' ? 'إنشاء مشروع' : 'Create Project'}</span>
           </button>
         </div>
       ) : (
@@ -574,7 +591,7 @@ const Projects = () => {
                         {project.name}
                       </h3>
                       <p className="text-sm text-gray-500">
-                        {projectExpenses.length + projectRevenues.length} معاملة
+                        {projectExpenses.length + projectRevenues.length} {t.transactionsCount}
                       </p>
                     </div>
                   </div>
@@ -608,19 +625,19 @@ const Projects = () => {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-light-gray/70">المصروفات</span>
+                    <span className="text-gray-600 dark:text-light-gray/70">{t.expensesCount}</span>
                     <span className="font-semibold text-fire-red">
                       {totalExpenses.toFixed(2)} {currency}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-light-gray/70">الإيرادات</span>
+                    <span className="text-gray-600 dark:text-light-gray/70">{t.revenuesCount}</span>
                     <span className="font-semibold text-green-500">
                       {totalRevenues.toFixed(2)} {currency}
                     </span>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-fire-red/20">
-                    <span className="text-gray-900 dark:text-white font-semibold">صافي الدخل</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">{t.netIncome}</span>
                     <span className={`font-bold ${
                       netIncome >= 0 ? 'text-green-500' : 'text-fire-red'
                     }`}>
@@ -643,7 +660,7 @@ const Projects = () => {
               : 'bg-white border-gray-200'
           }`}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">مشروع جديد</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{language === 'ar' ? 'مشروع جديد' : 'New Project'}</h2>
               <button
                 onClick={() => {
                   setShowCreateModal(false);
@@ -656,7 +673,7 @@ const Projects = () => {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">اسم المشروع *</label>
+                <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">{t.projectName} *</label>
                 <input
                   type="text"
                   value={projectName}
@@ -671,7 +688,7 @@ const Projects = () => {
                       ? 'bg-charcoal border-fire-red/20 text-white'
                       : 'bg-gray-50 border-gray-200 text-gray-900'
                   } focus:outline-none focus:border-fire-red transition-colors`}
-                  placeholder="أدخل اسم المشروع"
+                  placeholder={language === 'ar' ? 'أدخل اسم المشروع' : 'Enter project name'}
                   autoFocus
                 />
               </div>
@@ -688,7 +705,7 @@ const Projects = () => {
                       : 'bg-gray-300 hover:bg-gray-400 text-gray-900'
                   }`}
                 >
-                  إلغاء
+                  {t.cancel}
                 </button>
                 <button
                   onClick={handleCreateProject}
@@ -711,7 +728,7 @@ const Projects = () => {
               : 'bg-white border-gray-200'
           }`}>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">تعديل المشروع</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{language === 'ar' ? 'تعديل المشروع' : 'Edit Project'}</h2>
               <button
                 onClick={() => {
                   setShowEditModal(false);
@@ -725,7 +742,7 @@ const Projects = () => {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">اسم المشروع *</label>
+                <label className="block text-sm text-gray-600 dark:text-light-gray/70 mb-2">{t.projectName} *</label>
                 <input
                   type="text"
                   value={projectName}
@@ -735,7 +752,7 @@ const Projects = () => {
                       ? 'bg-charcoal border-fire-red/20 text-white'
                       : 'bg-gray-50 border-gray-200 text-gray-900'
                   } focus:outline-none focus:border-fire-red transition-colors`}
-                  placeholder="أدخل اسم المشروع"
+                  placeholder={language === 'ar' ? 'أدخل اسم المشروع' : 'Enter project name'}
                 />
               </div>
               <div className="flex gap-3 pt-4">
@@ -752,13 +769,13 @@ const Projects = () => {
                       : 'bg-gray-300 hover:bg-gray-400 text-gray-900'
                   }`}
                 >
-                  إلغاء
+                  {t.cancel}
                 </button>
                 <button
                   onClick={handleEditProject}
                   className="flex-1 px-4 py-2 bg-fire-red hover:bg-fire-red/90 text-white rounded-lg transition-all"
                 >
-                  تحديث
+                  {t.save}
                 </button>
               </div>
             </div>
@@ -769,8 +786,8 @@ const Projects = () => {
       {/* Delete Dialog - shown when not in project details */}
       {showDeleteDialog && !selectedProject && (
         <ConfirmDialog
-          title="حذف المشروع"
-          message="هل أنت متأكد من حذف هذا المشروع؟ سيتم حذف جميع المصروفات والإيرادات المرتبطة به."
+          title={language === 'ar' ? 'حذف المشروع' : 'Delete Project'}
+          message={language === 'ar' ? 'هل أنت متأكد من حذف هذا المشروع؟ سيتم حذف جميع المصروفات والإيرادات المرتبطة به.' : 'Are you sure you want to delete this project? All associated expenses and revenues will be deleted.'}
           onConfirm={handleDeleteProject}
           onCancel={() => {
             setShowDeleteDialog(false);

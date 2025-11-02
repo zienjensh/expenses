@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   ArrowDownCircle, 
@@ -7,24 +8,51 @@ import {
   FileText, 
   Settings,
   User,
-  LogOut
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslation } from '../utils/i18n';
 import toast from 'react-hot-toast';
 
 const Sidebar = ({ onClose }) => {
   const location = useLocation();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, isAdmin } = useAuth();
   const { theme } = useTheme();
+  const { language } = useLanguage();
+  const t = getTranslation(language);
+  const [adminStatus, setAdminStatus] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
 
+  // Check admin status
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (currentUser) {
+        try {
+          const admin = await isAdmin();
+          setAdminStatus(admin);
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+          setAdminStatus(false);
+        }
+      }
+      setCheckingAdmin(false);
+    };
+
+    checkAdmin();
+  }, [currentUser, isAdmin]);
+
+  // Build menu items array
   const menuItems = [
-    { path: '/', icon: LayoutDashboard, label: 'لوحة التحكم' },
-    { path: '/expenses', icon: ArrowDownCircle, label: 'المصروفات' },
-    { path: '/revenues', icon: ArrowUpCircle, label: 'الإيرادات' },
-    { path: '/projects', icon: Folder, label: 'المشاريع' },
-    { path: '/reports', icon: FileText, label: 'التقارير' },
-    { path: '/settings', icon: Settings, label: 'الإعدادات' },
+    { path: '/', icon: LayoutDashboard, label: t.dashboard },
+    { path: '/expenses', icon: ArrowDownCircle, label: t.expenses },
+    { path: '/revenues', icon: ArrowUpCircle, label: t.revenues },
+    { path: '/projects', icon: Folder, label: t.projects },
+    { path: '/reports', icon: FileText, label: t.reports },
+    ...(!checkingAdmin && adminStatus ? [{ path: '/admin', icon: Shield, label: t.adminDashboard }] : []),
+    { path: '/settings', icon: Settings, label: t.settings },
   ];
 
   const handleLogout = async () => {
@@ -41,7 +69,16 @@ const Sidebar = ({ onClose }) => {
   return (
     <aside className="h-full w-full flex flex-col">
       <div className="flex-1 p-6 overflow-y-auto">
-        <h1 className="text-2xl font-bold text-fire-red mb-8">إدارة المصروفات</h1>
+        <div className="flex items-center gap-3 mb-8">
+          <img 
+            src="/Logo.png" 
+            alt="Falusy Logo" 
+            className="h-12 w-12 object-contain transition-transform duration-300 hover:scale-110"
+          />
+          <h1 className="text-2xl font-bold text-fire-red">
+            {t.appName} <span className="text-lg text-gray-500">({t.appNameEn})</span>
+          </h1>
+        </div>
         <nav className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -92,7 +129,7 @@ const Sidebar = ({ onClose }) => {
               <p className={`text-sm font-semibold truncate ${
                 theme === 'dark' ? 'text-light-gray' : 'text-gray-900'
               }`}>
-                {currentUser?.displayName || 'المستخدم'}
+                {currentUser?.displayName || t.user}
               </p>
               <p className={`text-xs truncate ${
                 theme === 'dark' ? 'text-gray-500' : 'text-gray-600'
@@ -113,7 +150,7 @@ const Sidebar = ({ onClose }) => {
           }`}
         >
           <LogOut size={18} className="transition-transform duration-200 group-hover:rotate-[-15deg]" />
-          <span className="font-medium">تسجيل الخروج</span>
+          <span className="font-medium">{t.logout}</span>
         </button>
       </div>
     </aside>

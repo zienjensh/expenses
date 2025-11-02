@@ -1,14 +1,31 @@
 import { useState } from 'react';
 import { Edit, Trash2, Search, Filter } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslation } from '../utils/i18n';
 import AddTransactionModal from './AddTransactionModal';
 import ConfirmDialog from './ConfirmDialog';
 import { format } from 'date-fns';
 
 const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
   const { currency } = useTheme();
+  const { language } = useLanguage();
+  const t = getTranslation(language);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+
+  // Month names based on language
+  const monthNames = language === 'ar' 
+    ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+    : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const formatDateArabic = (date) => {
+    const dateObj = new Date(date);
+    const day = dateObj.getDate();
+    const month = monthNames[dateObj.getMonth()];
+    const year = dateObj.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
   const [filterPaymentMethod, setFilterPaymentMethod] = useState('');
   const [editData, setEditData] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -43,13 +60,13 @@ const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="relative">
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-light-gray/50" size={20} />
+          <Search className={`absolute ${language === 'ar' ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-light-gray/50`} size={20} />
           <input
             type="text"
-            placeholder="بحث..."
+            placeholder={language === 'ar' ? 'بحث...' : 'Search...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2 pr-10 bg-white dark:bg-charcoal/50 border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors"
+            className={`w-full px-4 py-2 ${language === 'ar' ? 'pr-10' : 'pl-10'} bg-white dark:bg-charcoal/50 border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors`}
           />
         </div>
         <select
@@ -57,7 +74,7 @@ const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
           onChange={(e) => setFilterCategory(e.target.value)}
           className="px-4 py-2 bg-white dark:bg-charcoal/50 border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors"
         >
-          <option value="">جميع الفئات</option>
+          <option value="">{language === 'ar' ? 'جميع الفئات' : 'All Categories'}</option>
           {categories.map(cat => (
             <option key={cat} value={cat}>{cat}</option>
           ))}
@@ -67,7 +84,7 @@ const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
           onChange={(e) => setFilterPaymentMethod(e.target.value)}
           className="px-4 py-2 bg-white dark:bg-charcoal/50 border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors"
         >
-          <option value="">جميع طرق الدفع</option>
+          <option value="">{language === 'ar' ? 'جميع طرق الدفع' : 'All Payment Methods'}</option>
           {paymentMethods.map(method => (
             <option key={method} value={method}>{method}</option>
           ))}
@@ -80,22 +97,22 @@ const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-fire-red/10">
               <tr>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-light-gray">المبلغ</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-light-gray">الفئة</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-light-gray">الوصف</th>
+                <th className={`px-6 py-4 ${language === 'ar' ? 'text-right' : 'text-left'} text-sm font-semibold text-gray-600 dark:text-light-gray`}>{t.amount}</th>
+                <th className={`px-6 py-4 ${language === 'ar' ? 'text-right' : 'text-left'} text-sm font-semibold text-gray-600 dark:text-light-gray`}>{t.category}</th>
+                <th className={`px-6 py-4 ${language === 'ar' ? 'text-right' : 'text-left'} text-sm font-semibold text-gray-600 dark:text-light-gray`}>{t.description}</th>
                 {type === 'expense' && (
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-light-gray">النوع</th>
+                  <th className={`px-6 py-4 ${language === 'ar' ? 'text-right' : 'text-left'} text-sm font-semibold text-gray-600 dark:text-light-gray`}>{t.expenseType}</th>
                 )}
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-light-gray">طريقة الدفع</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600 dark:text-light-gray">التاريخ</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600 dark:text-light-gray">الإجراءات</th>
+                <th className={`px-6 py-4 ${language === 'ar' ? 'text-right' : 'text-left'} text-sm font-semibold text-gray-600 dark:text-light-gray`}>{t.paymentMethod}</th>
+                <th className={`px-6 py-4 ${language === 'ar' ? 'text-right' : 'text-left'} text-sm font-semibold text-gray-600 dark:text-light-gray`}>{t.date}</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-600 dark:text-light-gray">{t.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-fire-red/10">
               {filteredTransactions.length === 0 ? (
                 <tr>
                   <td colSpan={type === 'expense' ? 7 : 6} className="px-6 py-8 text-center text-gray-500 dark:text-light-gray/50">
-                    لا توجد معاملات
+                    {type === 'expense' ? t.noExpenses : t.noRevenues}
                   </td>
                 </tr>
               ) : (
@@ -113,7 +130,7 @@ const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
                     )}
                     <td className="px-6 py-4 text-gray-600 dark:text-light-gray/70">{transaction.paymentMethod}</td>
                     <td className="px-6 py-4 text-gray-600 dark:text-light-gray/70">
-                      {format(new Date(transaction.date), 'yyyy-MM-dd')}
+                      {formatDateArabic(transaction.date)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
@@ -140,9 +157,9 @@ const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
       </div>
 
       {/* Total */}
-      <div className="text-right">
+      <div className={language === 'ar' ? 'text-right' : 'text-left'}>
         <p className="text-lg font-bold text-gray-900 dark:text-white">
-          الإجمالي: <span className={type === 'expense' ? 'text-fire-red' : 'text-green-500'}>
+          {t.total}: <span className={type === 'expense' ? 'text-fire-red' : 'text-green-500'}>
             {total.toFixed(2)} {currency}
           </span>
         </p>
@@ -158,8 +175,8 @@ const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
 
       {deleteId && (
         <ConfirmDialog
-          title="تأكيد الحذف"
-          message="هل أنت متأكد من حذف هذه المعاملة؟"
+          title={language === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete'}
+          message={language === 'ar' ? 'هل أنت متأكد من حذف هذه المعاملة؟' : 'Are you sure you want to delete this transaction?'}
           onConfirm={() => handleDelete(deleteId)}
           onCancel={() => setDeleteId(null)}
         />

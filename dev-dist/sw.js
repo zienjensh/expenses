@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-8bbf5390'], (function (workbox) { 'use strict';
+define(['./workbox-47da91e0'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -82,7 +82,7 @@ define(['./workbox-8bbf5390'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "index.html",
-    "revision": "0.gh2r6uetjqo"
+    "revision": "0.o4rjvr4639"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
@@ -93,6 +93,8 @@ define(['./workbox-8bbf5390'], (function (workbox) { 'use strict';
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 10,
       maxAgeSeconds: 31536000
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
     })]
   }), 'GET');
   workbox.registerRoute(/^https:\/\/fonts\.gstatic\.com/, new workbox.CacheFirst({
@@ -100,6 +102,8 @@ define(['./workbox-8bbf5390'], (function (workbox) { 'use strict';
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 10,
       maxAgeSeconds: 31536000
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
     })]
   }), 'GET');
   workbox.registerRoute(/^https:\/\/firestore\.googleapis\.com/, new workbox.NetworkFirst({
@@ -115,7 +119,9 @@ define(['./workbox-8bbf5390'], (function (workbox) { 'use strict';
   workbox.registerRoute(/^https:\/\/firebase\.googleapis\.com/, new workbox.NetworkFirst({
     "cacheName": "firebase-cache",
     "networkTimeoutSeconds": 10,
-    plugins: []
+    plugins: [new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
+    })]
   }), 'GET');
 
 }));

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   collection, 
   addDoc, 
@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
+import { saveToOfflineStorage, loadFromOfflineStorage, STORE_EXPENSES, STORE_REVENUES } from '../utils/offlineStorage';
 import toast from 'react-hot-toast';
 
 const TransactionContext = createContext({});
@@ -29,6 +30,7 @@ export const TransactionProvider = ({ children }) => {
   const [expenses, setExpenses] = useState([]);
   const [revenues, setRevenues] = useState([]);
   const [loading, setLoading] = useState(true);
+  const saveIntervalRef = useRef(null);
 
   // Fetch expenses
   useEffect(() => {
@@ -45,28 +47,53 @@ export const TransactionProvider = ({ children }) => {
       where('userId', '==', currentUser.uid)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const expensesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })).sort((a, b) => {
+    // Load from offline storage first
+    loadFromOfflineStorage(STORE_EXPENSES, currentUser.uid).then(offlineData => {
+      if (offlineData.length > 0) {
+        setExpenses(offlineData);
+        setLoading(false);
+      }
+    });
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const expensesData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Convert Firestore Timestamp to plain object for offline storage
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toMillis?.() || data.createdAt
+        };
+      }).sort((a, b) => {
         // Sort by date if available (most recent first)
         if (a.date && b.date) {
           return new Date(b.date) - new Date(a.date);
         }
         // Fallback to createdAt
         if (a.createdAt && b.createdAt) {
-          const aTime = a.createdAt?.toMillis?.() || new Date(a.createdAt).getTime();
-          const bTime = b.createdAt?.toMillis?.() || new Date(b.createdAt).getTime();
+          const aTime = typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt).getTime();
+          const bTime = typeof b.createdAt === 'number' ? b.createdAt : new Date(b.createdAt).getTime();
           return bTime - aTime;
         }
         return 0;
       });
       setExpenses(expensesData);
+      
+      // Save to offline storage
+      await saveToOfflineStorage(STORE_EXPENSES, expensesData, currentUser.uid);
+      
       setLoading(false);
-    }, (error) => {
+    }, async (error) => {
       console.error('Error fetching expenses:', error);
-      toast.error('حدث خطأ في تحميل المصروفات');
+      
+      // Try to load from offline storage on error
+      const offlineData = await loadFromOfflineStorage(STORE_EXPENSES, currentUser.uid);
+      if (offlineData.length > 0) {
+        setExpenses(offlineData);
+        toast.info('تم تحميل البيانات من التخزين المحلي');
+      } else {
+        toast.error('حدث خطأ في تحميل المصروفات');
+      }
       setLoading(false);
     });
 
@@ -87,31 +114,73 @@ export const TransactionProvider = ({ children }) => {
       where('userId', '==', currentUser.uid)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const revenuesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })).sort((a, b) => {
+    // Load from offline storage first
+    loadFromOfflineStorage(STORE_REVENUES, currentUser.uid).then(offlineData => {
+      if (offlineData.length > 0 && revenues.length === 0) {
+        setRevenues(offlineData);
+      }
+    });
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const revenuesData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Convert Firestore Timestamp to plain object for offline storage
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toMillis?.() || data.createdAt
+        };
+      }).sort((a, b) => {
         // Sort by date if available (most recent first)
         if (a.date && b.date) {
           return new Date(b.date) - new Date(a.date);
         }
         // Fallback to createdAt
         if (a.createdAt && b.createdAt) {
-          const aTime = a.createdAt?.toMillis?.() || new Date(a.createdAt).getTime();
-          const bTime = b.createdAt?.toMillis?.() || new Date(b.createdAt).getTime();
+          const aTime = typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt).getTime();
+          const bTime = typeof b.createdAt === 'number' ? b.createdAt : new Date(b.createdAt).getTime();
           return bTime - aTime;
         }
         return 0;
       });
       setRevenues(revenuesData);
-    }, (error) => {
+      
+      // Save to offline storage
+      await saveToOfflineStorage(STORE_REVENUES, revenuesData, currentUser.uid);
+    }, async (error) => {
       console.error('Error fetching revenues:', error);
-      toast.error('حدث خطأ في تحميل الإيرادات');
+      
+      // Try to load from offline storage on error
+      const offlineData = await loadFromOfflineStorage(STORE_REVENUES, currentUser.uid);
+      if (offlineData.length > 0) {
+        setRevenues(offlineData);
+      } else {
+        toast.error('حدث خطأ في تحميل الإيرادات');
+      }
     });
 
     return unsubscribe;
   }, [currentUser]);
+
+  // Auto-save to offline storage every 0.5 seconds
+  useEffect(() => {
+    if (!currentUser) return;
+
+    saveIntervalRef.current = setInterval(async () => {
+      if (expenses.length > 0) {
+        await saveToOfflineStorage(STORE_EXPENSES, expenses, currentUser.uid);
+      }
+      if (revenues.length > 0) {
+        await saveToOfflineStorage(STORE_REVENUES, revenues, currentUser.uid);
+      }
+    }, 500); // Save every 0.5 seconds
+
+    return () => {
+      if (saveIntervalRef.current) {
+        clearInterval(saveIntervalRef.current);
+      }
+    };
+  }, [expenses, revenues, currentUser]);
 
   const addExpense = async (expenseData) => {
     try {

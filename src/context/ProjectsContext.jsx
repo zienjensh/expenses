@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   collection, 
   addDoc, 
@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
+import { saveToOfflineStorage, loadFromOfflineStorage, STORE_PROJECTS } from '../utils/offlineStorage';
 import toast from 'react-hot-toast';
 
 const ProjectsContext = createContext({});
@@ -28,6 +29,7 @@ export const ProjectsProvider = ({ children }) => {
   const { currentUser } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const saveIntervalRef = useRef(null);
 
   // Fetch projects
   useEffect(() => {
@@ -42,38 +44,76 @@ export const ProjectsProvider = ({ children }) => {
       where('userId', '==', currentUser.uid)
     );
 
+    // Load from offline storage first
+    loadFromOfflineStorage(STORE_PROJECTS, currentUser.uid).then(offlineData => {
+      if (offlineData.length > 0) {
+        setProjects(offlineData);
+        setLoading(false);
+      }
+    });
+
     const unsubscribe = onSnapshot(q, 
-      (snapshot) => {
+      async (snapshot) => {
         console.log('Projects snapshot received:', snapshot.docs.length, 'projects');
         const projectsData = snapshot.docs.map(doc => {
           const data = doc.data();
           console.log('Project data:', { id: doc.id, ...data });
           return {
             id: doc.id,
-            ...data
+            ...data,
+            createdAt: data.createdAt?.toMillis?.() || data.createdAt
           };
         }).sort((a, b) => {
           // Sort by createdAt (most recent first)
           if (a.createdAt && b.createdAt) {
-            const aTime = a.createdAt?.toMillis?.() || new Date(a.createdAt).getTime();
-            const bTime = b.createdAt?.toMillis?.() || new Date(b.createdAt).getTime();
+            const aTime = typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt).getTime();
+            const bTime = typeof b.createdAt === 'number' ? b.createdAt : new Date(b.createdAt).getTime();
             return bTime - aTime;
           }
           return 0;
         });
         console.log('Projects after sort:', projectsData);
         setProjects(projectsData);
+        
+        // Save to offline storage
+        await saveToOfflineStorage(STORE_PROJECTS, projectsData, currentUser.uid);
+        
         setLoading(false);
       }, 
-      (error) => {
+      async (error) => {
         console.error('Error fetching projects:', error);
-        toast.error('حدث خطأ في تحميل المشاريع');
+        
+        // Try to load from offline storage on error
+        const offlineData = await loadFromOfflineStorage(STORE_PROJECTS, currentUser.uid);
+        if (offlineData.length > 0) {
+          setProjects(offlineData);
+          toast.info('تم تحميل البيانات من التخزين المحلي');
+        } else {
+          toast.error('حدث خطأ في تحميل المشاريع');
+        }
         setLoading(false);
       }
     );
 
     return unsubscribe;
   }, [currentUser]);
+
+  // Auto-save to offline storage every 0.5 seconds
+  useEffect(() => {
+    if (!currentUser) return;
+
+    saveIntervalRef.current = setInterval(async () => {
+      if (projects.length > 0) {
+        await saveToOfflineStorage(STORE_PROJECTS, projects, currentUser.uid);
+      }
+    }, 500); // Save every 0.5 seconds
+
+    return () => {
+      if (saveIntervalRef.current) {
+        clearInterval(saveIntervalRef.current);
+      }
+    };
+  }, [projects, currentUser]);
 
   const addProject = async (projectData) => {
     try {

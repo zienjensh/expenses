@@ -13,6 +13,7 @@ import {
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
 import { saveToOfflineStorage, loadFromOfflineStorage, STORE_PROJECTS } from '../utils/offlineStorage';
+import { logActivity } from '../utils/activityLogger';
 import toast from 'react-hot-toast';
 
 const ProjectsContext = createContext({});
@@ -142,6 +143,19 @@ export const ProjectsProvider = ({ children }) => {
       console.log('Adding project:', projectToAdd);
       const docRef = await addDoc(collection(db, 'projects'), projectToAdd);
       console.log('Project added with ID:', docRef.id);
+      
+      // Log activity
+      await logActivity(
+        currentUser.uid,
+        'add',
+        'project',
+        docRef.id,
+        {
+          description: projectName,
+          budget: projectData.budget
+        }
+      );
+      
       toast.success('تم إنشاء المشروع بنجاح');
       // Note: onSnapshot will automatically update the projects list
       return docRef.id;
@@ -177,6 +191,19 @@ export const ProjectsProvider = ({ children }) => {
         ...projectData,
         name: projectName
       });
+      
+      // Log activity
+      await logActivity(
+        currentUser.uid,
+        'edit',
+        'project',
+        id,
+        {
+          description: projectName,
+          budget: projectData.budget
+        }
+      );
+      
       toast.success('تم تحديث المشروع بنجاح');
     } catch (error) {
       console.error('Error updating project:', error);
@@ -190,7 +217,19 @@ export const ProjectsProvider = ({ children }) => {
 
   const deleteProject = async (id) => {
     try {
+      // Get project name before deletion for logging
+      const project = projects.find(p => p.id === id);
+      
       await deleteDoc(doc(db, 'projects', id));
+      
+      // Log activity
+      await logActivity(
+        currentUser.uid,
+        'delete',
+        'project',
+        id,
+        { description: project?.name || 'مشروع' }
+      );
       toast.success('تم حذف المشروع بنجاح');
     } catch (error) {
       console.error('Error deleting project:', error);

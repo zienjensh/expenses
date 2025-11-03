@@ -20,6 +20,7 @@ import Revenues from './pages/Revenues';
 import Reports from './pages/Reports';
 import Projects from './pages/Projects';
 import Settings from './pages/Settings';
+import ActivityLog from './pages/ActivityLog';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 
@@ -46,6 +47,7 @@ function App() {
                           <Route path="/revenues" element={<Revenues />} />
                           <Route path="/projects" element={<Projects />} />
                           <Route path="/reports" element={<Reports />} />
+                          <Route path="/activity-log" element={<ActivityLog />} />
                           <Route path="/settings" element={<Settings />} />
                           <Route 
                             path="/admin" 

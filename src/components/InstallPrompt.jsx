@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 const InstallPrompt = () => {
   const deferredPromptRef = useRef(null);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [hasDeferredPrompt, setHasDeferredPrompt] = useState(false);
   const { theme } = useTheme();
   const { language } = useLanguage();
   const t = getTranslation(language);
@@ -17,6 +18,10 @@ const InstallPrompt = () => {
     const isInstalled = window.matchMedia('(display-mode: standalone)').matches || 
                        (window.navigator && window.navigator.standalone) || 
                        document.referrer.includes('android-app://');
+
+    if (isInstalled) {
+      return; // Don't show prompt if already installed
+    }
 
     // Check if user has dismissed the prompt before
     const hasSeenPrompt = localStorage.getItem('pwa-install-dismissed');
@@ -32,8 +37,9 @@ const InstallPrompt = () => {
       }
     }
 
-    // Check if PWA is supported
-    const isPWASupported = 'serviceWorker' in navigator && 'PushManager' in window;
+    if (!shouldShowPrompt) {
+      return; // Don't show if user dismissed and it hasn't expired
+    }
 
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e) => {
@@ -41,44 +47,31 @@ const InstallPrompt = () => {
       // Save to both ref and window for persistence
       deferredPromptRef.current = e;
       window.deferredPrompt = e;
+      setHasDeferredPrompt(true);
       
-      // Show modal if:
-      // 1. App is not installed
-      // 2. User hasn't dismissed it or dismissal expired
-      if (!isInstalled && shouldShowPrompt && hasSeenPrompt !== 'false') {
-        setTimeout(() => {
-          setShowPrompt(true);
-        }, 3000); // Show after 3 seconds
-      }
+      console.log('beforeinstallprompt event fired, deferredPrompt saved');
+      
+      // Show modal only when deferredPrompt is available
+      setTimeout(() => {
+        setShowPrompt(true);
+      }, 3000); // Show after 3 seconds
     };
 
     // Check for existing deferred prompt (in case event fired before component mounted)
     if (window.deferredPrompt) {
       deferredPromptRef.current = window.deferredPrompt;
-      if (!isInstalled && shouldShowPrompt && hasSeenPrompt !== 'false') {
-        setTimeout(() => {
-          setShowPrompt(true);
-        }, 3000);
-      }
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Also show button if PWA is supported but event hasn't fired yet (after 5 seconds)
-    // This handles cases where the browser supports PWA but event is delayed
-    let fallbackTimer;
-    if (isPWASupported && !isInstalled && shouldShowPrompt && hasSeenPrompt !== 'false') {
-      fallbackTimer = setTimeout(() => {
-        // Show button anyway after timeout - users can still install manually
+      setHasDeferredPrompt(true);
+      console.log('Found existing deferredPrompt from window');
+      setTimeout(() => {
         setShowPrompt(true);
-      }, 5000);
+      }, 3000);
+    } else {
+      // Only listen for the event if we don't have a deferredPrompt yet
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      if (fallbackTimer) {
-        clearTimeout(fallbackTimer);
-      }
     };
   }, []);
 
@@ -86,68 +79,54 @@ const InstallPrompt = () => {
     // Get deferredPrompt from ref or window
     const prompt = deferredPromptRef.current || window.deferredPrompt;
     
-    if (prompt) {
-      try {
-        // Show the install prompt
-        await prompt.prompt();
-        
-        // Wait for the user to respond
-        const { outcome } = await prompt.userChoice;
-        
-        if (outcome === 'accepted') {
-          toast.success(language === 'ar' ? 'تم بدء تثبيت التطبيق' : 'App installation started');
-          setShowPrompt(false);
-          deferredPromptRef.current = null;
-          window.deferredPrompt = null;
-          localStorage.setItem('pwa-install-dismissed', 'false');
-        } else {
-          setShowPrompt(false);
-          localStorage.setItem('pwa-install-dismissed', 'true');
-          // Show again after 7 days
-          const expiry = new Date();
-          expiry.setDate(expiry.getDate() + 7);
-          localStorage.setItem('pwa-install-expiry', expiry.toISOString());
-        }
-      } catch (error) {
-        console.error('Error installing app:', error);
-        toast.error(language === 'ar' ? 'حدث خطأ أثناء التثبيت' : 'An error occurred during installation');
+    console.log('handleInstall called, prompt available:', !!prompt);
+    
+    if (!prompt) {
+      console.warn('No deferredPrompt available');
+      // Try to get it again from window (in case it was set after component mount)
+      const delayedPrompt = window.deferredPrompt;
+      if (delayedPrompt) {
+        deferredPromptRef.current = delayedPrompt;
+        // Retry with the found prompt
+        return handleInstall();
       }
-    } else {
-      // If no deferredPrompt, try to trigger browser's install prompt
-      // For some browsers, we can try different approaches
-      const userAgent = navigator.userAgent.toLowerCase();
       
-      if (userAgent.includes('chrome') || userAgent.includes('edge')) {
-        toast(
-          language === 'ar' 
-            ? 'يرجى استخدام قائمة المتصفح (⋮) → تثبيت التطبيق'
-            : 'Please use browser menu (⋮) → Install App',
-          { 
-            duration: 5000,
-            icon: 'ℹ️'
-          }
-        );
-      } else if (userAgent.includes('safari')) {
-        toast(
-          language === 'ar'
-            ? 'يرجى استخدام زر المشاركة → إضافة إلى الشاشة الرئيسية'
-            : 'Please use Share button → Add to Home Screen',
-          {
-            duration: 5000,
-            icon: 'ℹ️'
-          }
-        );
+      // If still no prompt, don't show error - just hide the modal
+      // The modal should only show when prompt is available anyway
+      setShowPrompt(false);
+      return;
+    }
+    
+    try {
+      // Show the install prompt
+      console.log('Calling prompt.prompt()');
+      await prompt.prompt();
+      
+      // Wait for the user to respond
+      const { outcome } = await prompt.userChoice;
+      console.log('User choice:', outcome);
+      
+      if (outcome === 'accepted') {
+        toast.success(language === 'ar' ? 'تم بدء تثبيت التطبيق' : 'App installation started');
+        setShowPrompt(false);
+        deferredPromptRef.current = null;
+        window.deferredPrompt = null;
+        localStorage.setItem('pwa-install-dismissed', 'false');
       } else {
-        toast(
-          language === 'ar' 
-            ? 'يرجى استخدام قائمة المتصفح لتثبيت التطبيق'
-            : 'Please use your browser menu to install the app',
-          { 
-            duration: 5000,
-            icon: 'ℹ️'
-          }
-        );
+        setShowPrompt(false);
+        localStorage.setItem('pwa-install-dismissed', 'true');
+        // Show again after 7 days
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + 7);
+        localStorage.setItem('pwa-install-expiry', expiry.toISOString());
       }
+      
+      // Clear the deferredPrompt after use
+      deferredPromptRef.current = null;
+      window.deferredPrompt = null;
+    } catch (error) {
+      console.error('Error installing app:', error);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء التثبيت' : 'An error occurred during installation');
     }
   };
 
@@ -169,8 +148,8 @@ const InstallPrompt = () => {
     localStorage.setItem('pwa-install-expiry', expiry.toISOString());
   };
 
-  // Show compact modal if prompt is available
-  if (showPrompt) {
+  // Show compact modal only if prompt is available AND showPrompt is true
+  if (showPrompt && hasDeferredPrompt && (deferredPromptRef.current || window.deferredPrompt)) {
     return (
       <div className={`fixed bottom-24 md:bottom-8 ${language === 'ar' ? 'left-4' : 'right-4'} z-[9998] animate-scaleIn`}>
         <div className={`relative rounded-2xl p-5 w-80 max-w-[calc(100vw-2rem)] border backdrop-blur-xl shadow-2xl overflow-hidden ${

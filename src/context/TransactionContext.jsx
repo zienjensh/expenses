@@ -13,6 +13,7 @@ import {
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
 import { saveToOfflineStorage, loadFromOfflineStorage, STORE_EXPENSES, STORE_REVENUES } from '../utils/offlineStorage';
+import { logActivity } from '../utils/activityLogger';
 import toast from 'react-hot-toast';
 
 const TransactionContext = createContext({});
@@ -184,12 +185,26 @@ export const TransactionProvider = ({ children }) => {
 
   const addExpense = async (expenseData) => {
     try {
-      await addDoc(collection(db, 'expenses'), {
+      const docRef = await addDoc(collection(db, 'expenses'), {
         ...expenseData,
         userId: currentUser.uid,
         createdAt: Timestamp.now(),
         // projectId is optional, can be undefined if not associated with a project
       });
+      
+      // Log activity
+      await logActivity(
+        currentUser.uid,
+        'add',
+        'expense',
+        docRef.id,
+        {
+          description: expenseData.description || 'مصروف بدون وصف',
+          amount: expenseData.amount,
+          category: expenseData.category
+        }
+      );
+      
       toast.success('تم إضافة المصروف بنجاح');
     } catch (error) {
       console.error('Error adding expense:', error);
@@ -200,12 +215,26 @@ export const TransactionProvider = ({ children }) => {
 
   const addRevenue = async (revenueData) => {
     try {
-      await addDoc(collection(db, 'revenues'), {
+      const docRef = await addDoc(collection(db, 'revenues'), {
         ...revenueData,
         userId: currentUser.uid,
         createdAt: Timestamp.now(),
         // projectId is optional, can be undefined if not associated with a project
       });
+      
+      // Log activity
+      await logActivity(
+        currentUser.uid,
+        'add',
+        'revenue',
+        docRef.id,
+        {
+          description: revenueData.description || 'إيراد بدون وصف',
+          amount: revenueData.amount,
+          category: revenueData.category
+        }
+      );
+      
       toast.success('تم إضافة الإيراد بنجاح');
     } catch (error) {
       console.error('Error adding revenue:', error);
@@ -217,6 +246,20 @@ export const TransactionProvider = ({ children }) => {
   const updateExpense = async (id, expenseData) => {
     try {
       await updateDoc(doc(db, 'expenses', id), expenseData);
+      
+      // Log activity
+      await logActivity(
+        currentUser.uid,
+        'edit',
+        'expense',
+        id,
+        {
+          description: expenseData.description || 'مصروف بدون وصف',
+          amount: expenseData.amount,
+          category: expenseData.category
+        }
+      );
+      
       toast.success('تم تحديث المصروف بنجاح');
     } catch (error) {
       console.error('Error updating expense:', error);
@@ -228,6 +271,20 @@ export const TransactionProvider = ({ children }) => {
   const updateRevenue = async (id, revenueData) => {
     try {
       await updateDoc(doc(db, 'revenues', id), revenueData);
+      
+      // Log activity
+      await logActivity(
+        currentUser.uid,
+        'edit',
+        'revenue',
+        id,
+        {
+          description: revenueData.description || 'إيراد بدون وصف',
+          amount: revenueData.amount,
+          category: revenueData.category
+        }
+      );
+      
       toast.success('تم تحديث الإيراد بنجاح');
     } catch (error) {
       console.error('Error updating revenue:', error);
@@ -239,6 +296,16 @@ export const TransactionProvider = ({ children }) => {
   const deleteExpense = async (id) => {
     try {
       await deleteDoc(doc(db, 'expenses', id));
+      
+      // Log activity
+      await logActivity(
+        currentUser.uid,
+        'delete',
+        'expense',
+        id,
+        { description: 'تم حذف المصروف' }
+      );
+      
       toast.success('تم حذف المصروف بنجاح');
     } catch (error) {
       console.error('Error deleting expense:', error);
@@ -250,6 +317,16 @@ export const TransactionProvider = ({ children }) => {
   const deleteRevenue = async (id) => {
     try {
       await deleteDoc(doc(db, 'revenues', id));
+      
+      // Log activity
+      await logActivity(
+        currentUser.uid,
+        'delete',
+        'revenue',
+        id,
+        { description: 'تم حذف الإيراد' }
+      );
+      
       toast.success('تم حذف الإيراد بنجاح');
     } catch (error) {
       console.error('Error deleting revenue:', error);

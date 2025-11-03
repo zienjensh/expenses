@@ -208,6 +208,12 @@ button, a, input, select, textarea {
   animation: fadeInUp 0.5s ease-out;
 }
 
+/* Chart bar hover effects */
+.bar-rect:hover {
+  opacity: 0.9;
+  transform: translateY(-4px);
+}
+
 /* Stagger animation delay */
 .animate-delay-100 {
   animation-delay: 0.1s;

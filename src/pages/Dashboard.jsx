@@ -30,11 +30,11 @@ const Dashboard = () => {
   const [showRevenueModal, setShowRevenueModal] = useState(false);
 
   const stats = useMemo(() => {
-    const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const totalRevenues = revenues.reduce((sum, r) => sum + (r.amount || 0), 0);
+    const totalExpenses = (expenses || []).reduce((sum, e) => sum + (e.amount || 0), 0);
+    const totalRevenues = (revenues || []).reduce((sum, r) => sum + (r.amount || 0), 0);
     const netIncome = totalRevenues - totalExpenses;
-    const avgExpense = expenses.length > 0 ? totalExpenses / expenses.length : 0;
-    const avgRevenue = revenues.length > 0 ? totalRevenues / revenues.length : 0;
+    const avgExpense = (expenses || []).length > 0 ? totalExpenses / (expenses || []).length : 0;
+    const avgRevenue = (revenues || []).length > 0 ? totalRevenues / (revenues || []).length : 0;
 
     return {
       totalExpenses,
@@ -47,11 +47,15 @@ const Dashboard = () => {
 
   const recentTransactions = useMemo(() => {
     const all = [
-      ...expenses.map(e => ({ ...e, transactionType: 'expense' })),
-      ...revenues.map(r => ({ ...r, transactionType: 'revenue' }))
+      ...(expenses || []).map(e => ({ ...e, transactionType: 'expense' })),
+      ...(revenues || []).map(r => ({ ...r, transactionType: 'revenue' }))
     ];
     return all
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .sort((a, b) => {
+        const dateA = a.date ? new Date(a.date) : new Date(0);
+        const dateB = b.date ? new Date(b.date) : new Date(0);
+        return dateB - dateA;
+      })
       .slice(0, 5);
   }, [expenses, revenues]);
 

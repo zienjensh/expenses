@@ -6,8 +6,9 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, query, collection, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, query, collection, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
+import { logActivity } from '../utils/activityLogger';
 
 const AuthContext = createContext({});
 
@@ -179,28 +180,91 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let previousUserId = null;
+    
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      // Log login activity when user changes from null to a user
+      if (user && !previousUserId) {
+        try {
+          await logActivity(
+            user.uid,
+            'login',
+            'account',
+            user.uid,
+            { description: 'تسجيل الدخول إلى النظام' }
+          );
+        } catch (error) {
+          console.error('Error logging login activity:', error);
+        }
+      }
+      
+      // Log logout activity when user changes from a user to null
+      if (!user && previousUserId) {
+        try {
+          await logActivity(
+            previousUserId,
+            'logout',
+            'account',
+            previousUserId,
+            { description: 'تسجيل الخروج من النظام' }
+          );
+        } catch (error) {
+          console.error('Error logging logout activity:', error);
+        }
+      }
+      
+      previousUserId = user?.uid || null;
       setCurrentUser(user);
       
       // Fetch user data from Firestore if user is logged in
       if (user) {
         try {
           const userDocRef = doc(db, 'users', user.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists()) {
-            setUserData(userDocSnap.data());
-          }
+          
+          // Use onSnapshot for real-time updates
+          const unsubscribeUserData = onSnapshot(
+            userDocRef,
+            (docSnapshot) => {
+              if (docSnapshot.exists()) {
+                setUserData(docSnapshot.data());
+              } else {
+                setUserData(null);
+              }
+              setLoading(false);
+            },
+            (error) => {
+              console.error('Error listening to user data:', error);
+              // Fallback to getDoc if onSnapshot fails
+              getDoc(userDocRef).then((userDocSnap) => {
+                if (userDocSnap.exists()) {
+                  setUserData(userDocSnap.data());
+                } else {
+                  setUserData(null);
+                }
+                setLoading(false);
+              }).catch((err) => {
+                console.error('Error fetching user data:', err);
+                setLoading(false);
+              });
+            }
+          );
+          
+          return () => {
+            unsubscribeUserData();
+          };
         } catch (error) {
-          console.error('Error fetching user data:', error);
+          console.error('Error setting up user data listener:', error);
+          setLoading(false);
         }
       } else {
         setUserData(null);
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+    };
   }, []);
 
   const value = {

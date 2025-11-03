@@ -11,12 +11,17 @@
   "dependencies": {
     "date-fns": "^2.30.0",
     "firebase": "^10.7.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.294.0",
+    "pdfmake": "^0.2.20",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.20.0",
-    "recharts": "^2.10.3"
+    "recharts": "^2.10.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

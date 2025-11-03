@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, setDoc, getDoc, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../utils/i18n';
 import SEO from '../components/SEO';
-import { Users, UserCheck, UserX, Mail, Calendar, Shield, Search, X, CheckCircle, XCircle, Receipt, ArrowDownCircle, ArrowUpCircle, Folder, Edit2, Trash2, Save } from 'lucide-react';
+import { Users, UserCheck, UserX, Mail, Calendar, Shield, Search, X, CheckCircle, XCircle, Receipt, ArrowDownCircle, ArrowUpCircle, Folder, Edit2, Trash2, Save, Settings, Wrench, Code, Power } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
@@ -35,6 +35,11 @@ const AdminDashboard = () => {
     email: '',
     username: ''
   });
+  const [showProjectLimitModal, setShowProjectLimitModal] = useState(false);
+  const [projectLimit, setProjectLimit] = useState('');
+  const [updatingLimit, setUpdatingLimit] = useState(false);
+  const [siteStatus, setSiteStatus] = useState('normal'); // 'normal' | 'maintenance' | 'development'
+  const [loadingStatus, setLoadingStatus] = useState(false);
 
   // Note: AdminRoute component handles admin access check
   // This is just an extra layer of protection
@@ -92,8 +97,46 @@ const AdminDashboard = () => {
 
     if (currentUser) {
       fetchUsers();
+      fetchSiteStatus();
     }
   }, [currentUser]);
+
+  // Fetch site status
+  const fetchSiteStatus = async () => {
+    try {
+      const statusDoc = await getDoc(doc(db, 'system', 'siteStatus'));
+      if (statusDoc.exists()) {
+        setSiteStatus(statusDoc.data().status || 'normal');
+      }
+    } catch (error) {
+      console.error('Error fetching site status:', error);
+    }
+  };
+
+  // Update site status
+  const updateSiteStatus = async (newStatus) => {
+    try {
+      setLoadingStatus(true);
+      const statusRef = doc(db, 'system', 'siteStatus');
+      await setDoc(statusRef, {
+        status: newStatus,
+        updatedAt: new Date(),
+        updatedBy: currentUser.uid
+      }, { merge: true });
+      
+      setSiteStatus(newStatus);
+      toast.success(
+        language === 'ar' 
+          ? (newStatus === 'maintenance' ? 'تم تفعيل وضع الصيانة' : newStatus === 'development' ? 'تم تفعيل وضع التطوير' : 'تم إعادة الموقع للحالة الطبيعية')
+          : (newStatus === 'maintenance' ? 'Maintenance mode enabled' : newStatus === 'development' ? 'Development mode enabled' : 'Site returned to normal')
+      );
+    } catch (error) {
+      console.error('Error updating site status:', error);
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء تحديث الحالة' : 'Error updating site status');
+    } finally {
+      setLoadingStatus(false);
+    }
+  };
 
   // Filter users based on search
   useEffect(() => {
@@ -411,7 +454,7 @@ const AdminDashboard = () => {
               {t.adminDescription}
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className={`px-4 py-2 rounded-lg ${
               theme === 'dark' 
                 ? 'bg-fire-red/20 border border-fire-red/30' 
@@ -422,6 +465,80 @@ const AdminDashboard = () => {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Site Status Controls */}
+        <div className={`p-6 rounded-xl border-2 ${
+          theme === 'dark' 
+            ? 'bg-white/5 border-white/10' 
+            : 'bg-white border-gray-200'
+        }`}>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <Settings className="text-fire-red" size={24} />
+            {language === 'ar' ? 'حالة الموقع' : 'Site Status'}
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => updateSiteStatus('development')}
+              disabled={loadingStatus || siteStatus === 'development'}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                siteStatus === 'development'
+                  ? 'bg-orange-500 text-white cursor-not-allowed'
+                  : loadingStatus
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30'
+              }`}
+            >
+              <Code size={20} />
+              {language === 'ar' ? 'وضع التطوير' : 'Development Mode'}
+              {siteStatus === 'development' && <CheckCircle size={18} />}
+            </button>
+            <button
+              onClick={() => updateSiteStatus('maintenance')}
+              disabled={loadingStatus || siteStatus === 'maintenance'}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                siteStatus === 'maintenance'
+                  ? 'bg-yellow-500 text-white cursor-not-allowed'
+                  : loadingStatus
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/30'
+              }`}
+            >
+              <Wrench size={20} />
+              {language === 'ar' ? 'وضع الصيانة' : 'Maintenance Mode'}
+              {siteStatus === 'maintenance' && <CheckCircle size={18} />}
+            </button>
+            {(siteStatus === 'development' || siteStatus === 'maintenance') && (
+              <button
+                onClick={() => updateSiteStatus('normal')}
+                disabled={loadingStatus}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                  loadingStatus
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-green-500 hover:bg-green-600 text-white border border-green-500'
+                }`}
+              >
+                <Power size={20} />
+                {language === 'ar' ? 'إعادة للحالة الطبيعية' : 'Return to Normal'}
+              </button>
+            )}
+          </div>
+          {siteStatus !== 'normal' && (
+            <div className={`mt-4 p-4 rounded-lg ${
+              theme === 'dark' 
+                ? 'bg-fire-red/10 border border-fire-red/30' 
+                : 'bg-fire-red/5 border border-fire-red/20'
+            }`}>
+              <p className={`text-sm ${
+                theme === 'dark' ? 'text-light-gray' : 'text-gray-700'
+              }`}>
+                {language === 'ar' 
+                  ? `⚠️ الموقع حالياً في وضع ${siteStatus === 'development' ? 'التطوير' : 'الصيانة'}. فقط الأدمن يمكنه الوصول للموقع.`
+                  : `⚠️ Site is currently in ${siteStatus} mode. Only admins can access the site.`
+                }
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Search Bar */}
@@ -546,199 +663,281 @@ const AdminDashboard = () => {
           {/* User Details Panel */}
           <div className="lg:col-span-1">
             {selectedUser ? (
-              <div className={`p-6 rounded-xl sticky top-24 ${
+              <div className={`relative p-8 rounded-2xl sticky top-24 overflow-hidden animate-fadeIn ${
                 theme === 'dark' 
-                  ? 'bg-white/5 border border-white/10' 
-                  : 'bg-white border border-gray-200'
+                  ? 'bg-gradient-to-br from-charcoal via-charcoal/95 to-charcoal border-2 border-fire-red/30 shadow-2xl shadow-fire-red/10' 
+                  : 'bg-gradient-to-br from-white via-white to-gray-50 border-2 border-fire-red/20 shadow-2xl shadow-fire-red/5'
               }`}>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <UserCheck size={24} className="text-fire-red" />
-                    {t.userDetails}
-                  </h2>
-                  <button
-                    onClick={() => setSelectedUser(null)}
-                    className={`p-2 rounded-lg transition-all ${
-                      theme === 'dark'
-                        ? 'hover:bg-white/10 text-gray-400 hover:text-white'
-                        : 'hover:bg-gray-100 text-gray-500 hover:text-gray-900'
-                    }`}
-                  >
-                    <X size={20} />
-                  </button>
+                {/* Decorative gradient background */}
+                <div className="absolute inset-0 opacity-30">
+                  <div className={`absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl ${
+                    selectedUser.isActive === false
+                      ? 'bg-gray-500/20'
+                      : 'bg-fire-red/20'
+                  } animate-pulse`}></div>
+                  <div className={`absolute bottom-0 left-0 w-72 h-72 rounded-full blur-3xl ${
+                    selectedUser.isActive === false
+                      ? 'bg-gray-400/10'
+                      : 'bg-fire-red/10'
+                  } animate-pulse`} style={{ animationDelay: '1s' }}></div>
                 </div>
 
-                <div className="space-y-4">
-                  {/* Avatar */}
-                  <div className="flex justify-center mb-6">
-                    <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl font-bold ${
-                      selectedUser.isActive === false
-                        ? 'bg-gray-500/20 text-gray-500 border-4 border-gray-500/30'
-                        : theme === 'dark'
-                        ? 'bg-fire-red/20 text-fire-red border-4 border-fire-red/30'
-                        : 'bg-fire-red/10 text-fire-red border-4 border-fire-red/20'
+                {/* Content */}
+                <div className="relative z-10">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-8 pb-6 border-b border-gray-200/50 dark:border-white/10">
+                    <h2 className={`text-2xl font-extrabold flex items-center gap-3 ${
+                      theme === 'dark' 
+                        ? 'text-white bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent' 
+                        : 'text-gray-900 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent'
                     }`}>
-                      {selectedUser.displayName?.[0]?.toUpperCase() || selectedUser.username?.[0]?.toUpperCase() || 'U'}
-                    </div>
+                      <div className={`p-2 rounded-xl ${
+                        selectedUser.isActive === false
+                          ? 'bg-gray-500/20 border border-gray-500/30'
+                          : 'bg-fire-red/20 border border-fire-red/30'
+                      } animate-scaleIn`}>
+                        <UserCheck size={24} className={selectedUser.isActive === false ? 'text-gray-500' : 'text-fire-red'} />
+                      </div>
+                      <span className="animate-fadeInUp">{t.userDetails}</span>
+                    </h2>
+                    <button
+                      onClick={() => setSelectedUser(null)}
+                      className={`group p-2.5 rounded-xl transition-all duration-300 ${
+                        theme === 'dark'
+                          ? 'hover:bg-red-500/20 text-gray-400 hover:text-red-400 hover:rotate-90 border border-transparent hover:border-red-500/30'
+                          : 'hover:bg-red-100 text-gray-500 hover:text-red-600 hover:rotate-90 border border-transparent hover:border-red-200'
+                      }`}
+                    >
+                      <X size={22} className="transition-transform duration-300 group-hover:scale-110" />
+                    </button>
                   </div>
 
-                  {/* User Info */}
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1 block">
-                        {t.username}
-                      </label>
-                      <div className={`p-3 rounded-lg ${
-                        theme === 'dark' ? 'bg-white/5' : 'bg-gray-50'
-                      }`}>
-                        <p className="text-gray-900 dark:text-white font-medium">
-                          {selectedUser.username || t.unavailable}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1 block">
-                        {t.displayName}
-                      </label>
-                      <div className={`p-3 rounded-lg ${
-                        theme === 'dark' ? 'bg-white/5' : 'bg-gray-50'
-                      }`}>
-                        <p className="text-gray-900 dark:text-white font-medium">
-                          {selectedUser.displayName || (language === 'ar' ? 'بدون اسم' : 'No name')}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1 block">
-                        {t.email}
-                      </label>
-                      <div className={`p-3 rounded-lg ${
-                        theme === 'dark' ? 'bg-white/5' : 'bg-gray-50'
-                      }`}>
-                        <p className="text-gray-900 dark:text-white font-medium break-all">
-                          {selectedUser.email || t.unavailable}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1 block">
-                        {t.userId}
-                      </label>
-                      <div className={`p-3 rounded-lg ${
-                        theme === 'dark' ? 'bg-white/5' : 'bg-gray-50'
-                      }`}>
-                        <p className="text-xs text-gray-600 dark:text-gray-400 font-mono break-all">
-                          {selectedUser.id}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1 block">
-                        {t.createdAt}
-                      </label>
-                      <div className={`p-3 rounded-lg ${
-                        theme === 'dark' ? 'bg-white/5' : 'bg-gray-50'
-                      }`}>
-                        <p className="text-gray-900 dark:text-white">
-                          {formatDate(selectedUser.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1 block">
-                        {t.accountStatus}
-                      </label>
-                      <div className={`p-3 rounded-lg flex items-center justify-between ${
-                        selectedUser.isActive === false
-                          ? 'bg-red-500/10 border border-red-500/20'
-                          : 'bg-green-500/10 border border-green-500/20'
-                      }`}>
-                        <div className="flex items-center gap-2">
-                          {selectedUser.isActive === false ? (
-                            <>
-                              <XCircle size={20} className="text-red-500" />
-                              <span className="text-red-500 font-semibold">{t.inactive}</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle size={20} className="text-green-500" />
-                              <span className="text-green-500 font-semibold">{t.active}</span>
-                            </>
-                          )}
+                  <div className="space-y-5">
+                    {/* Avatar with enhanced design */}
+                    <div className="flex justify-center mb-8 animate-fadeIn">
+                      <div className="relative group">
+                        {/* Glow effect */}
+                        <div className={`absolute inset-0 rounded-full blur-xl ${
+                          selectedUser.isActive === false
+                            ? 'bg-gray-500/30'
+                            : 'bg-fire-red/40'
+                        } group-hover:scale-125 transition-transform duration-500 animate-pulse`}></div>
+                        {/* Avatar circle */}
+                        <div className={`relative w-32 h-32 rounded-full flex items-center justify-center text-5xl font-extrabold border-4 transition-all duration-500 group-hover:scale-110 ${
+                          selectedUser.isActive === false
+                            ? 'bg-gradient-to-br from-gray-600/20 to-gray-500/20 text-gray-500 border-gray-500/50 shadow-lg shadow-gray-500/20'
+                            : theme === 'dark'
+                            ? 'bg-gradient-to-br from-fire-red/30 to-fire-red/20 text-fire-red border-fire-red/50 shadow-2xl shadow-fire-red/30'
+                            : 'bg-gradient-to-br from-fire-red/20 to-fire-red/10 text-fire-red border-fire-red/40 shadow-2xl shadow-fire-red/20'
+                        }`}>
+                          {selectedUser.displayName?.[0]?.toUpperCase() || selectedUser.username?.[0]?.toUpperCase() || 'U'}
+                          {/* Status indicator */}
+                          <div className={`absolute -bottom-1 -right-1 w-8 h-8 rounded-full border-4 ${
+                            theme === 'dark' ? 'border-charcoal' : 'border-white'
+                          } flex items-center justify-center ${
+                            selectedUser.isActive === false
+                              ? 'bg-red-500'
+                              : 'bg-green-500'
+                          } shadow-lg animate-scaleIn`}>
+                            {selectedUser.isActive === false ? (
+                              <XCircle size={16} className="text-white" />
+                            ) : (
+                              <CheckCircle size={16} className="text-white" />
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="pt-4 border-t border-gray-200 dark:border-white/10 space-y-3">
-                    <button
-                      onClick={handleShowTransactions}
-                      disabled={loadingTransactions}
-                      className="w-full py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 bg-fire-red hover:bg-fire-red/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loadingTransactions ? (
-                        <>
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          <span>{t.loading}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Receipt size={20} />
-                          <span>{t.transactions}</span>
-                        </>
-                      )}
-                    </button>
+                    {/* User Info with enhanced cards */}
+                    <div className="space-y-4">
+                      <div className="group animate-fadeInUp" style={{ animationDelay: '0.1s' }}>
+                        <label className="text-xs font-bold uppercase tracking-wider mb-2 block text-fire-red/70 dark:text-fire-red/60">
+                          {t.username}
+                        </label>
+                        <div className={`relative p-4 rounded-xl border transition-all duration-300 group-hover:scale-[1.02] ${
+                          theme === 'dark' 
+                            ? 'bg-white/5 border-white/10 group-hover:border-fire-red/30 group-hover:bg-white/10' 
+                            : 'bg-gradient-to-br from-gray-50 to-gray-100/50 border-gray-200 group-hover:border-fire-red/20 group-hover:shadow-lg'
+                        }`}>
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-fire-red/0 via-fire-red/0 to-fire-red/0 group-hover:from-fire-red/5 group-hover:to-transparent transition-all duration-300"></div>
+                          <p className="relative text-gray-900 dark:text-white font-bold text-lg">
+                            {selectedUser.username || t.unavailable}
+                          </p>
+                        </div>
+                      </div>
 
-                    <button
-                      onClick={handleEditUser}
-                      disabled={updating}
-                      className="w-full py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Edit2 size={20} />
-                      <span>{t.editAccount}</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => toggleUserStatus(selectedUser.id, selectedUser.isActive)}
-                      disabled={updating}
-                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-                        selectedUser.isActive === false
-                          ? 'bg-green-600 hover:bg-green-700 text-white'
-                          : 'bg-orange-600 hover:bg-orange-700 text-white'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      {updating ? (
-                        <>
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          <span>{t.loading}</span>
-                        </>
-                      ) : selectedUser.isActive === false ? (
-                        <>
-                          <UserCheck size={20} />
-                          <span>{t.activate}</span>
-                        </>
-                      ) : (
-                        <>
-                          <UserX size={20} />
-                          <span>{t.deactivate}</span>
-                        </>
-                      )}
-                    </button>
+                      <div className="group animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
+                        <label className="text-xs font-bold uppercase tracking-wider mb-2 block text-fire-red/70 dark:text-fire-red/60">
+                          {t.displayName}
+                        </label>
+                        <div className={`relative p-4 rounded-xl border transition-all duration-300 group-hover:scale-[1.02] ${
+                          theme === 'dark' 
+                            ? 'bg-white/5 border-white/10 group-hover:border-fire-red/30 group-hover:bg-white/10' 
+                            : 'bg-gradient-to-br from-gray-50 to-gray-100/50 border-gray-200 group-hover:border-fire-red/20 group-hover:shadow-lg'
+                        }`}>
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-fire-red/0 via-fire-red/0 to-fire-red/0 group-hover:from-fire-red/5 group-hover:to-transparent transition-all duration-300"></div>
+                          <p className="relative text-gray-900 dark:text-white font-bold text-lg">
+                            {selectedUser.displayName || (language === 'ar' ? 'بدون اسم' : 'No name')}
+                          </p>
+                        </div>
+                      </div>
 
-                    <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      disabled={updating}
-                      className="w-full py-3 px-4 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Trash2 size={20} />
-                      <span>{t.deleteAccount}</span>
-                    </button>
+                      <div className="group animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
+                        <label className="text-xs font-bold uppercase tracking-wider mb-2 block text-fire-red/70 dark:text-fire-red/60 flex items-center gap-2">
+                          <Mail size={14} />
+                          {t.email}
+                        </label>
+                        <div className={`relative p-4 rounded-xl border transition-all duration-300 group-hover:scale-[1.02] ${
+                          theme === 'dark' 
+                            ? 'bg-white/5 border-white/10 group-hover:border-fire-red/30 group-hover:bg-white/10' 
+                            : 'bg-gradient-to-br from-gray-50 to-gray-100/50 border-gray-200 group-hover:border-fire-red/20 group-hover:shadow-lg'
+                        }`}>
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-fire-red/0 via-fire-red/0 to-fire-red/0 group-hover:from-fire-red/5 group-hover:to-transparent transition-all duration-300"></div>
+                          <p className="relative text-gray-900 dark:text-white font-medium break-all">
+                            {selectedUser.email || t.unavailable}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="group animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+                        <label className="text-xs font-bold uppercase tracking-wider mb-2 block text-fire-red/70 dark:text-fire-red/60 flex items-center gap-2">
+                          <Calendar size={14} />
+                          {t.createdAt}
+                        </label>
+                        <div className={`relative p-4 rounded-xl border transition-all duration-300 group-hover:scale-[1.02] ${
+                          theme === 'dark' 
+                            ? 'bg-white/5 border-white/10 group-hover:border-fire-red/30 group-hover:bg-white/10' 
+                            : 'bg-gradient-to-br from-gray-50 to-gray-100/50 border-gray-200 group-hover:border-fire-red/20 group-hover:shadow-lg'
+                        }`}>
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-fire-red/0 via-fire-red/0 to-fire-red/0 group-hover:from-fire-red/5 group-hover:to-transparent transition-all duration-300"></div>
+                          <p className="relative text-gray-900 dark:text-white font-medium">
+                            {formatDate(selectedUser.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Account Status with enhanced design */}
+                      <div className="group animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+                        <label className="text-xs font-bold uppercase tracking-wider mb-2 block text-fire-red/70 dark:text-fire-red/60">
+                          {t.accountStatus}
+                        </label>
+                        <div className={`relative p-5 rounded-xl border-2 transition-all duration-300 group-hover:scale-[1.02] ${
+                          selectedUser.isActive === false
+                            ? 'bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/30 shadow-lg shadow-red-500/10'
+                            : 'bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/30 shadow-lg shadow-green-500/10'
+                        }`}>
+                          <div className={`absolute inset-0 rounded-xl ${
+                            selectedUser.isActive === false
+                              ? 'bg-red-500/0 group-hover:bg-red-500/10'
+                              : 'bg-green-500/0 group-hover:bg-green-500/10'
+                          } transition-all duration-300`}></div>
+                          <div className="relative flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-lg ${
+                                selectedUser.isActive === false
+                                  ? 'bg-red-500/20'
+                                  : 'bg-green-500/20'
+                              }`}>
+                                {selectedUser.isActive === false ? (
+                                  <XCircle size={24} className="text-red-500 animate-pulse" />
+                                ) : (
+                                  <CheckCircle size={24} className="text-green-500" />
+                                )}
+                              </div>
+                              <div>
+                                <span className={`text-lg font-extrabold ${
+                                  selectedUser.isActive === false ? 'text-red-500' : 'text-green-500'
+                                }`}>
+                                  {selectedUser.isActive === false ? t.inactive : t.active}
+                                </span>
+                              </div>
+                            </div>
+                            <div className={`px-3 py-1.5 rounded-full text-xs font-bold ${
+                              selectedUser.isActive === false
+                                ? 'bg-red-500/20 text-red-500 border border-red-500/30'
+                                : 'bg-green-500/20 text-green-500 border border-green-500/30'
+                            }`}>
+                              {selectedUser.isActive === false ? '⚠️' : '✓'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions with enhanced buttons */}
+                    <div className="pt-6 mt-6 border-t-2 border-gray-200/50 dark:border-white/10 space-y-3">
+                      <button
+                        onClick={handleShowTransactions}
+                        disabled={loadingTransactions}
+                        className="group relative w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 bg-gradient-to-r from-fire-red to-fire-red/90 hover:from-fire-red/90 hover:to-fire-red text-white shadow-lg shadow-fire-red/30 hover:shadow-xl hover:shadow-fire-red/40 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden animate-fadeInUp"
+                        style={{ animationDelay: '0.6s' }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                        {loadingTransactions ? (
+                          <>
+                            <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent relative z-10"></div>
+                            <span className="relative z-10">{t.loading}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Receipt size={22} className="relative z-10 group-hover:rotate-12 transition-transform duration-300" />
+                            <span className="relative z-10">{t.transactions}</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={handleEditUser}
+                        disabled={updating}
+                        className="group relative w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden animate-fadeInUp"
+                        style={{ animationDelay: '0.7s' }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                        <Edit2 size={22} className="relative z-10 group-hover:rotate-12 transition-transform duration-300" />
+                        <span className="relative z-10">{t.editAccount}</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => toggleUserStatus(selectedUser.id, selectedUser.isActive)}
+                        disabled={updating}
+                        className={`group relative w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden animate-fadeInUp ${
+                          selectedUser.isActive === false
+                            ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 shadow-green-500/30 hover:shadow-green-500/40'
+                            : 'bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 shadow-orange-500/30 hover:shadow-orange-500/40'
+                        }`}
+                        style={{ animationDelay: '0.8s' }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                        {updating ? (
+                          <>
+                            <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent relative z-10"></div>
+                            <span className="relative z-10">{t.loading}</span>
+                          </>
+                        ) : selectedUser.isActive === false ? (
+                          <>
+                            <UserCheck size={22} className="relative z-10 group-hover:scale-110 transition-transform duration-300" />
+                            <span className="relative z-10">{t.activate}</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserX size={22} className="relative z-10 group-hover:scale-110 transition-transform duration-300" />
+                            <span className="relative z-10">{t.deactivate}</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        disabled={updating}
+                        className="group relative w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 overflow-hidden animate-fadeInUp"
+                        style={{ animationDelay: '0.9s' }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                        <Trash2 size={22} className="relative z-10 group-hover:rotate-12 transition-transform duration-300" />
+                        <span className="relative z-10">{t.deleteAccount}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -944,10 +1143,50 @@ const AdminDashboard = () => {
 
                   {/* Projects Section */}
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                      <Folder className="text-blue-500" size={20} />
-                      {t.projectsCount} ({userTransactions.projects.length})
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <Folder className="text-blue-500" size={20} />
+                        {t.projectsCount} ({userTransactions.projects.length})
+                      </h3>
+                      <button
+                        onClick={() => {
+                          setProjectLimit(selectedUser.projectLimit?.toString() || '');
+                          setShowProjectLimitModal(true);
+                        }}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          theme === 'dark'
+                            ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30'
+                            : 'bg-blue-100 hover:bg-blue-200 text-blue-700 border border-blue-300'
+                        }`}
+                        title={t.setProjectLimit}
+                      >
+                        <Settings size={16} />
+                        {t.setProjectLimit}
+                      </button>
+                    </div>
+                    
+                    {/* Project Limit Info */}
+                    {selectedUser.projectLimit !== undefined && (
+                      <div className={`mb-4 p-3 rounded-lg ${
+                        theme === 'dark' ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{t.currentProjectLimit}:</span>
+                          <span className="text-sm font-bold text-blue-500">{selectedUser.projectLimit || '∞'}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{t.projectsUsed}:</span>
+                          <span className={`text-sm font-bold ${
+                            userTransactions.projects.length >= (selectedUser.projectLimit || 0) 
+                              ? 'text-red-500' 
+                              : 'text-green-500'
+                          }`}>
+                            {userTransactions.projects.length} / {selectedUser.projectLimit || '∞'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
                     {userTransactions.projects.length === 0 ? (
                       <div className={`p-8 text-center rounded-lg ${
                         theme === 'dark' ? 'bg-white/5' : 'bg-gray-50'
@@ -1239,6 +1478,138 @@ const AdminDashboard = () => {
                 } disabled:opacity-50`}
               >
                 {t.cancel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project Limit Modal */}
+      {showProjectLimitModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-xl ${
+            theme === 'dark' 
+              ? 'bg-charcoal border border-white/10' 
+              : 'bg-white border border-gray-200'
+          }`}>
+            {/* Modal Header */}
+            <div className={`p-6 border-b ${
+              theme === 'dark' ? 'border-white/10' : 'border-gray-200'
+            } flex items-center justify-between`}>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                <Settings className="text-fire-red" size={28} />
+                {t.setProjectLimit}
+              </h2>
+              <button
+                onClick={() => setShowProjectLimitModal(false)}
+                className={`p-2 rounded-lg transition-all ${
+                  theme === 'dark'
+                    ? 'hover:bg-white/10 text-gray-400 hover:text-white'
+                    : 'hover:bg-gray-100 text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {t.projectLimitDescription}
+                </p>
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  {t.projectLimit}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={projectLimit}
+                  onChange={(e) => setProjectLimit(e.target.value)}
+                  placeholder={t.enterProjectLimit}
+                  className={`w-full px-4 py-2 rounded-lg border ${
+                    theme === 'dark'
+                      ? 'bg-white/5 border-white/10 text-white placeholder-gray-500'
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+                  } focus:outline-none focus:ring-2 focus:ring-fire-red`}
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  {language === 'ar' 
+                    ? 'اترك الحقل فارغاً أو 0 لإزالة الحد (لا محدود)'
+                    : 'Leave empty or 0 to remove limit (unlimited)'}
+                </p>
+              </div>
+
+              {selectedUser.projectLimit !== undefined && (
+                <div className={`p-3 rounded-lg mb-4 ${
+                  theme === 'dark' ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">{t.currentProjectLimit}:</span>
+                    <span className="text-sm font-bold text-blue-500">{selectedUser.projectLimit || '∞'}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">{t.projectsUsed}:</span>
+                    <span className={`text-sm font-bold ${
+                      userTransactions.projects.length >= (selectedUser.projectLimit || 0) 
+                        ? 'text-red-500' 
+                        : 'text-green-500'
+                    }`}>
+                      {userTransactions.projects.length} / {selectedUser.projectLimit || '∞'}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className={`p-6 border-t ${
+              theme === 'dark' ? 'border-white/10' : 'border-gray-200'
+            } flex gap-3`}>
+              <button
+                onClick={() => setShowProjectLimitModal(false)}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+                  theme === 'dark'
+                    ? 'bg-white/10 hover:bg-white/20 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                }`}
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    setUpdatingLimit(true);
+                    const userRef = doc(db, 'users', selectedUser.id);
+                    const limitValue = projectLimit.trim() === '' || projectLimit === '0' 
+                      ? null 
+                      : parseInt(projectLimit, 10);
+                    
+                    await updateDoc(userRef, {
+                      projectLimit: limitValue
+                    });
+
+                    // Update local state
+                    setUsers(users.map(u => 
+                      u.id === selectedUser.id 
+                        ? { ...u, projectLimit: limitValue }
+                        : u
+                    ));
+                    setSelectedUser({ ...selectedUser, projectLimit: limitValue });
+                    
+                    toast.success(t.projectLimitUpdated);
+                    setShowProjectLimitModal(false);
+                  } catch (error) {
+                    console.error('Error updating project limit:', error);
+                    toast.error(t.updatingError);
+                  } finally {
+                    setUpdatingLimit(false);
+                  }
+                }}
+                disabled={updatingLimit}
+                className="flex-1 px-4 py-2 bg-fire-red hover:bg-fire-red/90 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {updatingLimit ? t.loading : t.save}
               </button>
             </div>
           </div>

@@ -120,6 +120,35 @@ service cloud.firestore {
       
       allow delete: if false; // Usernames cannot be deleted
     }
+    
+    // System collection rules (for site status and system-wide settings)
+    match /system/{documentId} {
+      // Everyone can read system status (needed for maintenance mode check)
+      allow read: if true;
+      
+      // Only admins can write to system settings
+      allow write: if request.auth != null && isAdminUser();
+    }
+    
+    // Activity Logs collection rules
+    match /activityLogs/{logId} {
+      // Users can read their own activity logs, admins can read all logs
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
+      
+      // Users can create their own activity logs
+      // Ensure userId in the document matches the authenticated user
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // No updates or deletes allowed (immutable log)
+      allow update, delete: if false;
+    }
+    
+    // Allow admins to list all activity logs
+    match /activityLogs {
+      allow list: if request.auth != null && isAdminUser();
+    }
   }
 }
 

@@ -1,20 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProjects } from '../context/ProjectsContext';
 import { useTransactions } from '../context/TransactionContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { getTranslation } from '../utils/i18n';
 import SEO from '../components/SEO';
-import { FolderPlus, Folder, X, Edit2, Trash2, ArrowLeft, Plus, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { FolderPlus, Folder, X, Edit2, Trash2, ArrowLeft, Plus, ArrowDownCircle, ArrowUpCircle, AlertCircle } from 'lucide-react';
 import AddTransactionModal from '../components/AddTransactionModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { format } from 'date-fns';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 const Projects = () => {
   const { projects, addProject, updateProject, deleteProject, loading: projectsLoading } = useProjects();
   const { expenses, revenues, deleteExpense, deleteRevenue } = useTransactions();
   const { currency, theme } = useTheme();
   const { language } = useLanguage();
+  const { userData: contextUserData, currentUser } = useAuth();
+  const [userData, setUserData] = useState(contextUserData);
   const t = getTranslation(language);
 
   // Month names based on language
@@ -43,6 +48,29 @@ const Projects = () => {
   const [showRevenueModal, setShowRevenueModal] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState(null);
   const [isDeletingExpense, setIsDeletingExpense] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
+
+  // Listen to user data updates in real-time to get latest projectLimit
+  useEffect(() => {
+    if (currentUser) {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const unsubscribe = onSnapshot(
+        userDocRef,
+        (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            setUserData(docSnapshot.data());
+          }
+        },
+        (error) => {
+          console.error('Error listening to user data:', error);
+        }
+      );
+
+      return () => unsubscribe();
+    } else {
+      setUserData(null);
+    }
+  }, [currentUser]);
 
   // Filter expenses and revenues for selected project
   const projectExpenses = selectedProject 
@@ -65,6 +93,28 @@ const Projects = () => {
     if (!projectName.trim()) {
       return;
     }
+    
+    // Check project limit - check if adding one more project would exceed the limit
+    console.log('Checking project limit:', {
+      projectLimit: userData?.projectLimit,
+      currentProjectsCount: projects.length,
+      userData: userData
+    });
+    
+    if (userData?.projectLimit !== null && userData?.projectLimit !== undefined && userData.projectLimit > 0) {
+      const currentProjectsCount = projects.length;
+      // Check if current count is already at or above the limit
+      if (currentProjectsCount >= userData.projectLimit) {
+        console.log('Project limit reached!', {
+          current: currentProjectsCount,
+          limit: userData.projectLimit
+        });
+        setShowLimitModal(true);
+        setShowCreateModal(false);
+        return;
+      }
+    }
+    
     try {
       console.log('Creating project with name:', projectName.trim());
       const projectId = await addProject({ name: projectName.trim() });
@@ -794,6 +844,87 @@ const Projects = () => {
             setEditingProject(null);
           }}
         />
+      )}
+
+      {/* Project Limit Reached Modal */}
+      {showLimitModal && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-xl ${
+            theme === 'dark' 
+              ? 'bg-charcoal border border-white/10' 
+              : 'bg-white border border-gray-200'
+          }`}>
+            {/* Modal Header */}
+            <div className={`p-6 border-b ${
+              theme === 'dark' ? 'border-white/10' : 'border-gray-200'
+            } flex items-center justify-between`}>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                <AlertCircle className="text-fire-red" size={28} />
+                {t.projectLimitReached}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowLimitModal(false);
+                  setShowCreateModal(false);
+                }}
+                className={`p-2 rounded-lg transition-all ${
+                  theme === 'dark'
+                    ? 'hover:bg-white/10 text-gray-400 hover:text-white'
+                    : 'hover:bg-gray-100 text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              <div className={`mb-4 p-4 rounded-lg ${
+                theme === 'dark' ? 'bg-fire-red/10 border border-fire-red/20' : 'bg-red-50 border border-red-200'
+              }`}>
+                <p className={`text-center ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  {t.contactDeveloperMessage}
+                </p>
+              </div>
+              
+              {userData?.projectLimit !== undefined && (
+                <div className={`p-3 rounded-lg ${
+                  theme === 'dark' ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-sm ${theme === 'dark' ? 'text-light-gray' : 'text-gray-600'}`}>
+                      {t.currentProjectLimit}:
+                    </span>
+                    <span className="text-sm font-bold text-blue-500">{userData.projectLimit}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className={`text-sm ${theme === 'dark' ? 'text-light-gray' : 'text-gray-600'}`}>
+                      {t.projectsUsed}:
+                    </span>
+                    <span className="text-sm font-bold text-red-500">
+                      {projects.length} / {userData.projectLimit}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className={`p-6 border-t ${
+              theme === 'dark' ? 'border-white/10' : 'border-gray-200'
+            }`}>
+              <button
+                onClick={() => {
+                  setShowLimitModal(false);
+                  setShowCreateModal(false);
+                }}
+                className="w-full px-4 py-2 bg-fire-red hover:bg-fire-red/90 text-white rounded-lg font-medium transition-all"
+              >
+                {t.close}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       </div>
     </>

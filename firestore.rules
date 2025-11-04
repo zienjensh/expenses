@@ -121,6 +121,11 @@ service cloud.firestore {
       allow delete: if false; // Usernames cannot be deleted
     }
     
+    // Allow querying usernames collection for login (by phoneNumber or username)
+    match /usernames {
+      allow list: if true; // Allow queries for login purposes
+    }
+    
     // System collection rules (for site status and system-wide settings)
     match /system/{documentId} {
       // Everyone can read system status (needed for maintenance mode check)
@@ -248,6 +253,119 @@ service cloud.firestore {
     match /supportMessages {
       // Allow list queries - Firestore will check individual message permissions
       allow list: if request.auth != null;
+    }
+    
+    // Budgets collection rules
+    match /budgets/{budgetId} {
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    match /budgets {
+      allow list: if request.auth != null;
+    }
+    
+    // Financial Goals collection rules
+    match /financialGoals/{goalId} {
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    match /financialGoals {
+      allow list: if request.auth != null;
+    }
+    
+    // Recurring Bills collection rules
+    match /recurringBills/{billId} {
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    match /recurringBills {
+      allow list: if request.auth != null;
+    }
+    
+    // Custom Categories collection rules
+    match /customCategories/{categoryId} {
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    match /customCategories {
+      allow list: if request.auth != null;
+    }
+    
+    // Savings Challenges collection rules
+    match /savingsChallenges/{challengeId} {
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Achievements/Rewards collection rules
+    match /achievements/{achievementId} {
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Groups collection rules (for group mode)
+    match /groups/{groupId} {
+      allow read: if request.auth != null && 
+        (resource == null || 
+         resource.data.members.hasAny([request.auth.uid]) || 
+         resource.data.ownerId == request.auth.uid || 
+         isAdminUser());
+      allow create: if request.auth != null && 
+        request.resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null && 
+        (resource.data.ownerId == request.auth.uid || 
+         resource.data.members.hasAny([request.auth.uid]) || 
+         isAdminUser());
+      allow delete: if request.auth != null && 
+        (resource.data.ownerId == request.auth.uid || isAdminUser());
+    }
+    
+    // Travel Expenses collection rules
+    match /travelExpenses/{expenseId} {
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Backup Data collection rules
+    match /backups/{backupId} {
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
     }
   }
 }

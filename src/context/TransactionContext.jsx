@@ -91,9 +91,15 @@ export const TransactionProvider = ({ children }) => {
       const offlineData = await loadFromOfflineStorage(STORE_EXPENSES, currentUser.uid);
       if (offlineData.length > 0) {
         setExpenses(offlineData);
-        toast.info('تم تحميل البيانات من التخزين المحلي');
+        // Only show toast if not a permissions error (user might not be logged in properly)
+        if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+          toast('تم تحميل البيانات من التخزين المحلي', { icon: 'ℹ️' });
+        }
       } else {
-        toast.error('حدث خطأ في تحميل المصروفات');
+        // Only show error if not a permissions error
+        if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+          toast.error('حدث خطأ في تحميل المصروفات');
+        }
       }
       setLoading(false);
     });
@@ -155,8 +161,15 @@ export const TransactionProvider = ({ children }) => {
       const offlineData = await loadFromOfflineStorage(STORE_REVENUES, currentUser.uid);
       if (offlineData.length > 0) {
         setRevenues(offlineData);
+        // Only show toast if not a permissions error (user might not be logged in properly)
+        if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+          toast('تم تحميل البيانات من التخزين المحلي', { icon: 'ℹ️' });
+        }
       } else {
-        toast.error('حدث خطأ في تحميل الإيرادات');
+        // Only show error if not a permissions error
+        if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+          toast.error('حدث خطأ في تحميل الإيرادات');
+        }
       }
     });
 

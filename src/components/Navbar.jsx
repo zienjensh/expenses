@@ -50,7 +50,10 @@ const Navbar = ({ onToggleSidebar }) => {
 
       setUnreadCount(unreadNotifications.length);
     }, (error) => {
-      console.error('Error fetching notifications:', error);
+      // Only log if not a permissions error (user might not be fully authenticated)
+      if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+        console.error('Error fetching notifications:', error);
+      }
     });
 
     return () => unsubscribe();

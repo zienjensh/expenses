@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, DollarSign, Tag, Calendar, CreditCard, FileText, Folder, Loader2 } from 'lucide-react';
 import { useTransactions } from '../context/TransactionContext';
 import { useProjects } from '../context/ProjectsContext';
+import { useCustomCategories } from '../context/CustomCategoriesContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../utils/i18n';
@@ -10,6 +11,7 @@ import toast from 'react-hot-toast';
 const AddTransactionModal = ({ type, onClose, editData = null, projectId = null }) => {
   const { addExpense, addRevenue, updateExpense, updateRevenue } = useTransactions();
   const { projects } = useProjects();
+  const { getAllCategories } = useCustomCategories();
   const { theme } = useTheme();
   const { language } = useLanguage();
   const t = getTranslation(language);
@@ -27,13 +29,56 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
     projectId: editData?.projectId || projectId || '',
   });
 
-  // Categories and options based on language
-  const expenseCategories = language === 'ar' 
-    ? ['طعام', 'مواصلات', 'صحة', 'ترفيه', 'فواتير', 'تسوق', 'أخرى']
-    : ['Food', 'Transportation', 'Health', 'Entertainment', 'Bills', 'Shopping', 'Other'];
-  const revenueCategories = language === 'ar'
-    ? ['راتب', 'استثمار', 'هدية', 'أخرى']
-    : ['Salary', 'Investment', 'Gift', 'Other'];
+  // Get categories from CustomCategoriesContext
+  const allCategories = getAllCategories();
+  const expenseCategories = allCategories;
+  const revenueCategories = allCategories;
+  
+  // Fallback categories if no custom categories exist
+  const fallbackExpenseCategories = language === 'ar' 
+    ? [
+        { name: 'طعام', icon: '🍔', color: '#FF6B6B' },
+        { name: 'مواصلات', icon: '🚗', color: '#4ECDC4' },
+        { name: 'صحة', icon: '🏥', color: '#96CEB4' },
+        { name: 'ترفيه', icon: '🎬', color: '#FFEAA7' },
+        { name: 'فواتير', icon: '💡', color: '#DDA15E' },
+        { name: 'تسوق', icon: '🛒', color: '#45B7D1' },
+        { name: 'أخرى', icon: '📦', color: '#95A5A6' }
+      ]
+    : [
+        { name: 'Food', icon: '🍔', color: '#FF6B6B' },
+        { name: 'Transportation', icon: '🚗', color: '#4ECDC4' },
+        { name: 'Health', icon: '🏥', color: '#96CEB4' },
+        { name: 'Entertainment', icon: '🎬', color: '#FFEAA7' },
+        { name: 'Bills', icon: '💡', color: '#DDA15E' },
+        { name: 'Shopping', icon: '🛒', color: '#45B7D1' },
+        { name: 'Other', icon: '📦', color: '#95A5A6' }
+      ];
+  const fallbackRevenueCategories = language === 'ar'
+    ? [
+        { name: 'راتب', icon: '💰', color: '#2ECC71' },
+        { name: 'استثمار', icon: '📈', color: '#3498DB' },
+        { name: 'هدية', icon: '🎁', color: '#E91E63' },
+        { name: 'أخرى', icon: '📦', color: '#95A5A6' }
+      ]
+    : [
+        { name: 'Salary', icon: '💰', color: '#2ECC71' },
+        { name: 'Investment', icon: '📈', color: '#3498DB' },
+        { name: 'Gift', icon: '🎁', color: '#E91E63' },
+        { name: 'Other', icon: '📦', color: '#95A5A6' }
+      ];
+  
+  const finalExpenseCategories = expenseCategories.length > 0 ? expenseCategories : fallbackExpenseCategories;
+  const finalRevenueCategories = revenueCategories.length > 0 ? revenueCategories : fallbackRevenueCategories;
+  
+  // Get category by name
+  const getCategoryByName = (name) => {
+    const allCats = type === 'expense' ? finalExpenseCategories : finalRevenueCategories;
+    return allCats.find(cat => cat.name === name) || { name, icon: '📦', color: '#95A5A6' };
+  };
+  
+  const selectedCategory = formData.category ? getCategoryByName(formData.category) : null;
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const expenseTypes = language === 'ar'
     ? ['ثابت', 'متغير', 'طوارئ']
     : ['Fixed', 'Variable', 'Emergency'];
@@ -58,6 +103,22 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
       document.body.style.overflow = 'unset';
     };
   }, [onClose]);
+  
+  // Close category dropdown when clicking outside
+  useEffect(() => {
+    if (!showCategoryDropdown) return;
+    
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.category-dropdown-container')) {
+        setShowCategoryDropdown(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCategoryDropdown]);
 
   // Validate form
   const validateForm = () => {
@@ -241,43 +302,80 @@ const AddTransactionModal = ({ type, onClose, editData = null, projectId = null 
               </div>
 
               {/* Category */}
-              <div>
+              <div className="relative category-dropdown-container">
                 <label className={`block text-sm font-medium mb-2 flex items-center gap-2 ${
                   theme === 'dark' ? 'text-light-gray' : 'text-gray-700'
                 }`}>
                   <Tag size={16} className="text-fire-red" />
                   {t.category} *
                 </label>
-                <select
-                  required
-                  value={formData.category}
-                  onChange={(e) => {
-                    setFormData({ ...formData, category: e.target.value });
-                    if (errors.category) setErrors({ ...errors, category: '' });
-                  }}
-                  className={`w-full px-4 py-3 rounded-xl border transition-all ${
-                    errors.category
-                      ? 'border-red-500'
-                      : theme === 'dark'
-                      ? 'bg-white/5 border-fire-red/20 text-white focus:border-fire-red focus:bg-white/10'
-                      : 'bg-white border-gray-200 text-gray-900 focus:border-fire-red focus:bg-white'
-                  } focus:outline-none focus:ring-2 focus:ring-fire-red/20`}
-                  style={{
-                    backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
-                    color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
-                  }}
-                >
-                  <option value="" style={{
-                    backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
-                    color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
-                  }}>{t.selectCategory}</option>
-                  {(type === 'expense' ? expenseCategories : revenueCategories).map(cat => (
-                    <option key={cat} value={cat} style={{
-                      backgroundColor: theme === 'dark' ? '#0E0E0E' : '#FFFFFF',
-                      color: theme === 'dark' ? '#F2F2F2' : '#0E0E0E'
-                    }}>{cat}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                    className={`w-full px-4 py-3 rounded-xl border transition-all flex items-center justify-between ${
+                      errors.category
+                        ? 'border-red-500'
+                        : theme === 'dark'
+                        ? 'bg-white/5 border-fire-red/20 text-white focus:border-fire-red focus:bg-white/10'
+                        : 'bg-white border-gray-200 text-gray-900 focus:border-fire-red focus:bg-white'
+                    } focus:outline-none focus:ring-2 focus:ring-fire-red/20`}
+                  >
+                    {selectedCategory ? (
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{selectedCategory.icon}</span>
+                        <span>{selectedCategory.name}</span>
+                        <div 
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: selectedCategory.color }}
+                        />
+                      </div>
+                    ) : (
+                      <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}>
+                        {t.selectCategory}
+                      </span>
+                    )}
+                    <Tag size={16} className={theme === 'dark' ? 'text-gray-400' : 'text-gray-500'} />
+                  </button>
+                  
+                  {showCategoryDropdown && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-[9999]" 
+                        onClick={() => setShowCategoryDropdown(false)}
+                      />
+                      <div className={`absolute z-[10000] w-full mt-2 rounded-xl border shadow-xl max-h-64 overflow-y-auto ${
+                        theme === 'dark'
+                          ? 'bg-charcoal border-fire-red/20'
+                          : 'bg-white border-gray-200'
+                      }`}>
+                        {(type === 'expense' ? finalExpenseCategories : finalRevenueCategories).map(cat => (
+                          <button
+                            key={cat.name}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, category: cat.name });
+                              setShowCategoryDropdown(false);
+                              if (errors.category) setErrors({ ...errors, category: '' });
+                            }}
+                            className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-fire-red/10 transition-colors border-b last:border-b-0 ${
+                              theme === 'dark' ? 'border-fire-red/10' : 'border-gray-100'
+                            } ${formData.category === cat.name ? 'bg-fire-red/20' : ''}`}
+                          >
+                            <span className="text-xl">{cat.icon}</span>
+                            <span className={`flex-1 text-left ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                              {cat.name}
+                            </span>
+                            <div 
+                              className="w-4 h-4 rounded-full"
+                              style={{ backgroundColor: cat.color }}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
                 {errors.category && (
                   <p className="text-red-500 text-xs mt-1">{errors.category}</p>
                 )}

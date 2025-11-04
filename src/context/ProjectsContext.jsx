@@ -88,9 +88,15 @@ export const ProjectsProvider = ({ children }) => {
         const offlineData = await loadFromOfflineStorage(STORE_PROJECTS, currentUser.uid);
         if (offlineData.length > 0) {
           setProjects(offlineData);
-          toast.info('تم تحميل البيانات من التخزين المحلي');
+          // Only show toast if not a permissions error (user might not be logged in properly)
+          if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+            toast('تم تحميل البيانات من التخزين المحلي', { icon: 'ℹ️' });
+          }
         } else {
-          toast.error('حدث خطأ في تحميل المشاريع');
+          // Only show error if not a permissions error
+          if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+            toast.error('حدث خطأ في تحميل المشاريع');
+          }
         }
         setLoading(false);
       }

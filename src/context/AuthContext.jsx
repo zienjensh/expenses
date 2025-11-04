@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
@@ -88,7 +88,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (username, email, password, displayName) => {
+  // Check if phone number exists
+  const checkPhoneExists = async (phoneNumber) => {
+    const phoneClean = normalizePhoneNumber(phoneNumber);
+    
+    if (!phoneClean || phoneClean.length < 8) {
+      return false;
+    }
+    
+    try {
+      // Query usernames collection (accessible without auth) to check phoneNumber
+      const q = query(
+        collection(db, 'usernames'), 
+        where('phoneNumber', '==', phoneClean)
+      );
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error('Error checking phone number:', error);
+      return false;
+    }
+  };
+
+  // Normalize phone number (remove spaces, dashes, etc.)
+  const normalizePhoneNumber = (phone) => {
+    return phone.replace(/\D/g, ''); // Keep only digits
+  };
+
+  const signup = async (username, email, password, displayName, phoneNumber) => {
     // Validate username
     const usernameLower = username.toLowerCase().trim();
     
@@ -98,6 +125,28 @@ export const AuthProvider = ({ children }) => {
 
     if (!/^[a-zA-Z0-9_]+$/.test(usernameLower)) {
       throw new Error('اسم المستخدم يمكن أن يحتوي فقط على أحرف إنجليزية وأرقام وشرطة سفلية');
+    }
+
+    // Validate phone number if provided
+    let phoneClean = null;
+    if (phoneNumber && phoneNumber.trim()) {
+      phoneClean = normalizePhoneNumber(phoneNumber);
+      if (phoneClean.length < 8) {
+        throw new Error('رقم الهاتف يجب أن يكون صحيحاً');
+      }
+      
+      // Try to check if phone number already exists
+      // Note: This may fail if user is not authenticated, but we'll validate on create
+      try {
+        const phoneExists = await checkPhoneExists(phoneClean);
+        if (phoneExists) {
+          throw new Error('رقم الهاتف موجود مسبقاً');
+        }
+      } catch (checkError) {
+        // If check fails, continue with signup
+        // The phone number uniqueness will be enforced by Firestore rules or app logic
+        console.warn('Could not verify phone number uniqueness:', checkError);
+      }
     }
 
     // Check if username already exists
@@ -119,6 +168,7 @@ export const AuthProvider = ({ children }) => {
       username: usernameLower,
       email: email,
       userId: userCredential.user.uid,
+      phoneNumber: phoneClean,
       createdAt: new Date()
     });
 
@@ -128,39 +178,75 @@ export const AuthProvider = ({ children }) => {
       username: usernameLower,
       email: email,
       displayName: displayName || '',
+      phoneNumber: phoneClean || null,
       createdAt: new Date()
     });
 
     return userCredential;
   };
 
-  const login = async (username, password) => {
-    const usernameLower = username.toLowerCase().trim();
+  const login = async (usernameOrPhone, password) => {
+    const input = usernameOrPhone.trim();
+    let email = null;
 
     try {
-      // Try to get username document directly by ID first (faster and doesn't need index)
-      const usernameDocRef = doc(db, 'usernames', usernameLower);
-      const usernameDocSnap = await getDoc(usernameDocRef);
+      // Check if input is a phone number (contains only digits or starts with +)
+      const isPhoneNumber = /^[\d+\s-]+$/.test(input) && input.replace(/\D/g, '').length >= 8;
+      
+      if (isPhoneNumber) {
+        // Login by phone number
+        // First try to find username document with phoneNumber
+        const phoneClean = normalizePhoneNumber(input);
+        
+        // Try querying usernames collection first (if phoneNumber is stored there)
+        const usernameQuery = query(collection(db, 'usernames'), where('phoneNumber', '==', phoneClean));
+        const usernameSnapshot = await getDocs(usernameQuery);
+        
+        if (!usernameSnapshot.empty) {
+          email = usernameSnapshot.docs[0].data().email;
+        } else {
+          // Fallback: query users collection (requires authentication)
+          // This might fail, so we'll catch and show appropriate error
+          try {
+            const q = query(collection(db, 'users'), where('phoneNumber', '==', phoneClean));
+            const querySnapshot = await getDocs(q);
 
-      let email = null;
+            if (querySnapshot.empty) {
+              throw new Error('رقم الهاتف أو كلمة المرور غير صحيحة');
+            }
 
-      if (usernameDocSnap.exists()) {
-        // Found by document ID
-        email = usernameDocSnap.data().email;
-      } else {
-        // Fallback: query by username field (requires index)
-        const q = query(collection(db, 'usernames'), where('username', '==', usernameLower));
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-          throw new Error('اسم المستخدم أو كلمة المرور غير صحيحة');
+            email = querySnapshot.docs[0].data().email;
+          } catch (queryError) {
+            // If query fails, try username approach
+            throw new Error('خطأ في الصلاحيات. يرجى استخدام اسم المستخدم أو التأكد من نشر قواعد Firestore الجديدة.');
+          }
         }
+      } else {
+        // Login by username
+        const usernameLower = input.toLowerCase().trim();
+        
+        // Try to get username document directly by ID first (faster and doesn't need index)
+        const usernameDocRef = doc(db, 'usernames', usernameLower);
+        const usernameDocSnap = await getDoc(usernameDocRef);
 
-        email = querySnapshot.docs[0].data().email;
+        if (usernameDocSnap.exists()) {
+          // Found by document ID
+          email = usernameDocSnap.data().email;
+        } else {
+          // Fallback: query by username field (requires index)
+          const q = query(collection(db, 'usernames'), where('username', '==', usernameLower));
+          const querySnapshot = await getDocs(q);
+
+          if (querySnapshot.empty) {
+            throw new Error('اسم المستخدم أو كلمة المرور غير صحيحة');
+          }
+
+          email = querySnapshot.docs[0].data().email;
+        }
       }
 
       if (!email) {
-        throw new Error('اسم المستخدم أو كلمة المرور غير صحيحة');
+        throw new Error('اسم المستخدم/رقم الهاتف أو كلمة المرور غير صحيحة');
       }
 
       // Login with email (Firebase Auth requires email)
@@ -233,7 +319,10 @@ export const AuthProvider = ({ children }) => {
               setLoading(false);
             },
             (error) => {
-              console.error('Error listening to user data:', error);
+              // Only log if not a permissions error (user might not be fully authenticated)
+              if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+                console.error('Error listening to user data:', error);
+              }
               // Fallback to getDoc if onSnapshot fails
               getDoc(userDocRef).then((userDocSnap) => {
                 if (userDocSnap.exists()) {
@@ -243,7 +332,10 @@ export const AuthProvider = ({ children }) => {
                 }
                 setLoading(false);
               }).catch((err) => {
-                console.error('Error fetching user data:', err);
+                // Only log if not a permissions error
+                if (!err.message?.includes('permissions') && !err.code?.includes('permission')) {
+                  console.error('Error fetching user data:', err);
+                }
                 setLoading(false);
               });
             }
@@ -275,12 +367,13 @@ export const AuthProvider = ({ children }) => {
     logout,
     loading,
     checkUsernameExists,
+    checkPhoneExists,
     isAdmin: checkIsAdmin
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

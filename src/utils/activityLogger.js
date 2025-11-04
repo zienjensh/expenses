@@ -26,7 +26,10 @@ export const logActivity = async (userId, action, entityType, entityId = null, d
       createdAt: Timestamp.now(),
     });
   } catch (error) {
-    console.error('Error logging activity:', error);
+    // Only log if not a permissions error (user might not be fully authenticated)
+    if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+      console.error('Error logging activity:', error);
+    }
     // Don't throw error - logging should not break the main functionality
   }
 };

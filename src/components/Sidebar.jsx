@@ -11,7 +11,11 @@ import {
   LogOut,
   Shield,
   Activity,
-  MessageCircle
+  MessageCircle,
+  Wallet,
+  Target,
+  Receipt,
+  Tags
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -51,6 +55,10 @@ const Sidebar = ({ onClose }) => {
     { path: '/', icon: LayoutDashboard, label: t.dashboard },
     { path: '/expenses', icon: ArrowDownCircle, label: t.expenses },
     { path: '/revenues', icon: ArrowUpCircle, label: t.revenues },
+    { path: '/budgets', icon: Wallet, label: t.budgets },
+    { path: '/goals', icon: Target, label: t.financialGoals },
+    { path: '/recurring-bills', icon: Receipt, label: t.recurringBills },
+    { path: '/categories', icon: Tags, label: t.customCategories },
     { path: '/projects', icon: Folder, label: t.projects },
     { path: '/reports', icon: FileText, label: t.reports },
     { path: '/activity-log', icon: Activity, label: t.activityLog },

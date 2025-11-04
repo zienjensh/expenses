@@ -40,7 +40,7 @@ export const ThemeProvider = ({ children }) => {
     if (savedCurrency === 'جنيه' || savedCurrency === '£') {
       return 'GBP';
     }
-    return savedCurrency || 'ر.س';
+    return savedCurrency || 'GBP'; // Default to Egyptian Pound (جنيه مصري)
   });
 
   const [currencyLoading, setCurrencyLoading] = useState(true);
@@ -74,7 +74,7 @@ export const ThemeProvider = ({ children }) => {
           } else {
             // If no currency in Firestore, check localStorage and save to Firestore
             const savedCurrency = localStorage.getItem('currency');
-            let currencyToUse = savedCurrency || 'ر.س';
+            let currencyToUse = savedCurrency || 'GBP'; // Default to Egyptian Pound
             if (savedCurrency === 'جنيه' || savedCurrency === '£') {
               currencyToUse = 'GBP';
             }
@@ -87,7 +87,7 @@ export const ThemeProvider = ({ children }) => {
         } else {
           // User document doesn't exist, create it with default currency
           const savedCurrency = localStorage.getItem('currency');
-          let currencyToUse = savedCurrency || 'ر.س';
+          let currencyToUse = savedCurrency || 'GBP'; // Default to Egyptian Pound
           if (savedCurrency === 'جنيه' || savedCurrency === '£') {
             currencyToUse = 'GBP';
           }

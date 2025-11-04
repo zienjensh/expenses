@@ -5,6 +5,11 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { TransactionProvider } from './context/TransactionContext';
 import { ProjectsProvider } from './context/ProjectsContext';
+import { BudgetProvider } from './context/BudgetContext';
+import { GoalsProvider } from './context/GoalsContext';
+import { RecurringBillsProvider } from './context/RecurringBillsContext';
+import { CustomCategoriesProvider } from './context/CustomCategoriesContext';
+import { BackupProvider } from './context/BackupContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { getTranslation } from './utils/i18n';
@@ -13,12 +18,17 @@ import AdminRoute from './components/AdminRoute';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import MobileNavBar from './components/MobileNavBar';
+import Footer from './components/Footer';
 import InstallPrompt from './components/InstallPrompt';
 import OfflineIndicator from './components/OfflineIndicator';
 import LanguageSelectionModal from './components/LanguageSelectionModal';
 import Dashboard from './pages/Dashboard';
 import Expenses from './pages/Expenses';
 import Revenues from './pages/Revenues';
+import Budgets from './pages/Budgets';
+import FinancialGoals from './pages/FinancialGoals';
+import RecurringBills from './pages/RecurringBills';
+import CustomCategories from './pages/CustomCategories';
 import Reports from './pages/Reports';
 import Projects from './pages/Projects';
 import Settings from './pages/Settings';
@@ -27,6 +37,8 @@ import Support from './pages/Support';
 import SupportManagement from './pages/SupportManagement';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
+import Copyright from './pages/Copyright';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,35 +56,51 @@ function App() {
                 <ProtectedRoute>
                   <TransactionProvider>
                     <ProjectsProvider>
-                      <Layout sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}>
-                        <Routes>
-                          <Route path="/" element={<Dashboard />} />
-                          <Route path="/expenses" element={<Expenses />} />
-                          <Route path="/revenues" element={<Revenues />} />
-                          <Route path="/projects" element={<Projects />} />
-                          <Route path="/reports" element={<Reports />} />
-                          <Route path="/activity-log" element={<ActivityLog />} />
-                          <Route path="/support" element={<Support />} />
-                          <Route path="/settings" element={<Settings />} />
-                          <Route 
-                            path="/admin" 
-                            element={
-                              <AdminRoute>
-                                <AdminDashboard />
-                              </AdminRoute>
-                            } 
-                          />
-                          <Route 
-                            path="/admin/support" 
-                            element={
-                              <AdminRoute>
-                                <SupportManagement />
-                              </AdminRoute>
-                            } 
-                          />
-                          <Route path="*" element={<Navigate to="/" />} />
-                        </Routes>
-                      </Layout>
+                      <BudgetProvider>
+                        <GoalsProvider>
+                          <RecurringBillsProvider>
+                            <CustomCategoriesProvider>
+                              <BackupProvider>
+                                <Layout sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen}>
+                                  <Routes>
+                                    <Route path="/" element={<Dashboard />} />
+                                    <Route path="/expenses" element={<Expenses />} />
+                                    <Route path="/revenues" element={<Revenues />} />
+                                    <Route path="/budgets" element={<Budgets />} />
+                                    <Route path="/goals" element={<FinancialGoals />} />
+                                    <Route path="/recurring-bills" element={<RecurringBills />} />
+                                    <Route path="/categories" element={<CustomCategories />} />
+                                    <Route path="/projects" element={<Projects />} />
+                                    <Route path="/reports" element={<Reports />} />
+                                    <Route path="/activity-log" element={<ActivityLog />} />
+                                    <Route path="/support" element={<Support />} />
+                                    <Route path="/settings" element={<Settings />} />
+                                    <Route path="/copyright" element={<Copyright />} />
+                                    <Route path="/privacy" element={<PrivacyPolicy />} />
+                                    <Route 
+                                      path="/admin" 
+                                      element={
+                                        <AdminRoute>
+                                          <AdminDashboard />
+                                        </AdminRoute>
+                                      } 
+                                    />
+                                    <Route 
+                                      path="/admin/support" 
+                                      element={
+                                        <AdminRoute>
+                                          <SupportManagement />
+                                        </AdminRoute>
+                                      } 
+                                    />
+                                    <Route path="*" element={<Navigate to="/" />} />
+                                  </Routes>
+                                </Layout>
+                              </BackupProvider>
+                            </CustomCategoriesProvider>
+                          </RecurringBillsProvider>
+                        </GoalsProvider>
+                      </BudgetProvider>
                     </ProjectsProvider>
                   </TransactionProvider>
                 </ProtectedRoute>
@@ -119,9 +147,9 @@ const Layout = ({ children, sidebarOpen, setSidebarOpen }) => {
   const t = getTranslation(language);
   
   return (
-    <div className={`min-h-screen bg-light-gray dark:bg-charcoal transition-colors duration-300 relative ${dir}`}>
+    <div className={`min-h-screen bg-light-gray dark:bg-charcoal transition-colors duration-300 relative flex flex-col ${dir}`}>
       <Navbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-      <div className="flex pt-20">
+      <div className="flex flex-1 pt-20">
         {/* Desktop Sidebar Overlay - only show on tablet (md-lg), not on desktop */}
         {sidebarOpen && (
           <div 
@@ -140,8 +168,12 @@ const Layout = ({ children, sidebarOpen, setSidebarOpen }) => {
           <Sidebar onClose={() => setSidebarOpen(false)} />
         </aside>
         {/* Main content with bottom padding for mobile nav */}
-        <main className={`flex-1 ${dir === 'rtl' ? 'mr-0 lg:mr-64' : 'ml-0 lg:ml-64'} p-4 md:p-6 pb-24 md:pb-6 relative`}>
-          {children}
+        <main className={`flex-1 flex flex-col ${dir === 'rtl' ? 'mr-0 lg:mr-64' : 'ml-0 lg:ml-64'} p-4 md:p-6 pb-24 md:pb-6 relative`}>
+          <div className="flex-1">
+            {children}
+          </div>
+          {/* Footer */}
+          <Footer />
         </main>
       </div>
       {/* Floating Support Button - only visible on mobile */}

@@ -36,8 +36,7 @@ const Projects = () => {
   };
   
   // Debug: Log projects state
-  console.log('Projects component - projects:', projects);
-  console.log('Projects component - loading:', projectsLoading);
+  // Debug logs removed for production
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

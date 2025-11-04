@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, Folder, FileText, Settings, Shield, Activity, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, Folder, FileText, Settings, Shield, Activity, MessageCircle, Wallet, Target, Receipt, Tags } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -38,6 +38,10 @@ const MobileNavBar = () => {
     { path: '/', icon: LayoutDashboard, label: t.dashboard },
     { path: '/expenses', icon: ArrowDownCircle, label: t.expenses },
     { path: '/revenues', icon: ArrowUpCircle, label: t.revenues },
+    { path: '/budgets', icon: Wallet, label: t.budgets },
+    { path: '/goals', icon: Target, label: t.financialGoals },
+    { path: '/recurring-bills', icon: Receipt, label: t.recurringBills },
+    { path: '/categories', icon: Tags, label: t.customCategories },
     { path: '/projects', icon: Folder, label: t.projects },
     { path: '/reports', icon: FileText, label: t.reports },
     { path: '/activity-log', icon: Activity, label: t.activityLog },

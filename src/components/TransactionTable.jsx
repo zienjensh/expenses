@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Edit, Trash2, Search, Filter } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useCustomCategories } from '../context/CustomCategoriesContext';
 import { getTranslation } from '../utils/i18n';
 import AddTransactionModal from './AddTransactionModal';
 import ConfirmDialog from './ConfirmDialog';
@@ -10,9 +11,20 @@ import { format } from 'date-fns';
 const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
   const { currency } = useTheme();
   const { language } = useLanguage();
+  const { getAllCategories } = useCustomCategories();
   const t = getTranslation(language);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+  
+  // Get all categories with icons and colors
+  const allCategories = getAllCategories();
+  const getCategoryInfo = (categoryName) => {
+    return allCategories.find(cat => cat.name === categoryName) || { 
+      name: categoryName, 
+      icon: '📦', 
+      color: '#95A5A6' 
+    };
+  };
 
   // Month names based on language
   const monthNames = language === 'ar' 
@@ -75,9 +87,14 @@ const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
           className="px-4 py-2 bg-white dark:bg-charcoal/50 border border-gray-200 dark:border-fire-red/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-fire-red transition-colors"
         >
           <option value="">{language === 'ar' ? 'جميع الفئات' : 'All Categories'}</option>
-          {categories.map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
+          {categories.map(cat => {
+            const categoryInfo = getCategoryInfo(cat);
+            return (
+              <option key={cat} value={cat}>
+                {categoryInfo.icon} {categoryInfo.name}
+              </option>
+            );
+          })}
         </select>
         <select
           value={filterPaymentMethod}
@@ -123,7 +140,24 @@ const TransactionTable = ({ transactions, type, onDelete, onUpdate }) => {
                         {type === 'expense' ? '-' : '+'} {transaction.amount?.toFixed(2)} {currency}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-700 dark:text-light-gray">{transaction.category}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const categoryInfo = getCategoryInfo(transaction.category);
+                          return (
+                            <>
+                              <span className="text-lg">{categoryInfo.icon}</span>
+                              <span className="text-gray-700 dark:text-light-gray">{categoryInfo.name}</span>
+                              <div 
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: categoryInfo.color }}
+                                title={categoryInfo.color}
+                              />
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-gray-600 dark:text-light-gray/70">{transaction.description || '-'}</td>
                     {type === 'expense' && (
                       <td className="px-6 py-4 text-gray-600 dark:text-light-gray/70">{transaction.type || '-'}</td>

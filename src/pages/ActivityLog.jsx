@@ -173,7 +173,10 @@ const ActivityLog = () => {
           setLoading(false);
         },
         async (error) => {
-          console.warn('OrderBy query failed, trying without orderBy:', error);
+          // Only log if it's not a permissions error (which is handled elsewhere)
+          if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+            console.warn('OrderBy query failed, trying without orderBy:', error);
+          }
           
           // Fallback: query without orderBy
           try {

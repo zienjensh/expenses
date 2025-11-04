@@ -82,19 +82,26 @@ export const ProjectsProvider = ({ children }) => {
         setLoading(false);
       }, 
       async (error) => {
-        console.error('Error fetching projects:', error);
+        // Only log/show error if not a permissions error (user might not be fully authenticated)
+        const isPermissionError = error.message?.includes('permissions') || 
+                                   error.code?.includes('permission') ||
+                                   error.code === 'permission-denied';
+        
+        if (!isPermissionError) {
+          console.error('Error fetching projects:', error);
+        }
         
         // Try to load from offline storage on error
         const offlineData = await loadFromOfflineStorage(STORE_PROJECTS, currentUser.uid);
         if (offlineData.length > 0) {
           setProjects(offlineData);
-          // Only show toast if not a permissions error (user might not be logged in properly)
-          if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+          // Only show toast if not a permissions error
+          if (!isPermissionError) {
             toast('تم تحميل البيانات من التخزين المحلي', { icon: 'ℹ️' });
           }
         } else {
           // Only show error if not a permissions error
-          if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+          if (!isPermissionError) {
             toast.error('حدث خطأ في تحميل المشاريع');
           }
         }

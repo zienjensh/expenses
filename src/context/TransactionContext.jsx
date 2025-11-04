@@ -85,19 +85,26 @@ export const TransactionProvider = ({ children }) => {
       
       setLoading(false);
     }, async (error) => {
-      console.error('Error fetching expenses:', error);
+      // Only log/show error if not a permissions error (user might not be fully authenticated)
+      const isPermissionError = error.message?.includes('permissions') || 
+                                 error.code?.includes('permission') ||
+                                 error.code === 'permission-denied';
+      
+      if (!isPermissionError) {
+        console.error('Error fetching expenses:', error);
+      }
       
       // Try to load from offline storage on error
       const offlineData = await loadFromOfflineStorage(STORE_EXPENSES, currentUser.uid);
       if (offlineData.length > 0) {
         setExpenses(offlineData);
-        // Only show toast if not a permissions error (user might not be logged in properly)
-        if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+        // Only show toast if not a permissions error
+        if (!isPermissionError) {
           toast('تم تحميل البيانات من التخزين المحلي', { icon: 'ℹ️' });
         }
       } else {
         // Only show error if not a permissions error
-        if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+        if (!isPermissionError) {
           toast.error('حدث خطأ في تحميل المصروفات');
         }
       }
@@ -155,19 +162,26 @@ export const TransactionProvider = ({ children }) => {
       // Save to offline storage
       await saveToOfflineStorage(STORE_REVENUES, revenuesData, currentUser.uid);
     }, async (error) => {
-      console.error('Error fetching revenues:', error);
+      // Only log/show error if not a permissions error (user might not be fully authenticated)
+      const isPermissionError = error.message?.includes('permissions') || 
+                                 error.code?.includes('permission') ||
+                                 error.code === 'permission-denied';
+      
+      if (!isPermissionError) {
+        console.error('Error fetching revenues:', error);
+      }
       
       // Try to load from offline storage on error
       const offlineData = await loadFromOfflineStorage(STORE_REVENUES, currentUser.uid);
       if (offlineData.length > 0) {
         setRevenues(offlineData);
-        // Only show toast if not a permissions error (user might not be logged in properly)
-        if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+        // Only show toast if not a permissions error
+        if (!isPermissionError) {
           toast('تم تحميل البيانات من التخزين المحلي', { icon: 'ℹ️' });
         }
       } else {
         // Only show error if not a permissions error
-        if (!error.message?.includes('permissions') && !error.code?.includes('permission')) {
+        if (!isPermissionError) {
           toast.error('حدث خطأ في تحميل الإيرادات');
         }
       }

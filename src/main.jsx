@@ -3,6 +3,16 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 
+// Global handler for beforeinstallprompt event (catch it early before React loads)
+// This ensures we never miss the installation prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent the mini-infobar from appearing on mobile
+  e.preventDefault();
+  // Store the event so it can be triggered later
+  window.deferredPrompt = e;
+  console.log('✅ Global beforeinstallprompt event captured');
+});
+
 // Register service worker for PWA (handled by vite-plugin-pwa)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {

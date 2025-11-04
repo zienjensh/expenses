@@ -249,6 +249,16 @@ button, a, input, select, textarea {
   height: env(safe-area-inset-bottom);
 }
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
 /* Scale animations */
 .scale-102 {
   transform: scale(1.02);

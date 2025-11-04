@@ -149,6 +149,106 @@ service cloud.firestore {
     match /activityLogs {
       allow list: if request.auth != null && isAdminUser();
     }
+    
+    // Notifications collection rules
+    match /notifications/{notificationId} {
+      // Users can read their own notifications, admins can read all notifications
+      allow read: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid || isAdminUser());
+      
+      // Only admins can create notifications
+      allow create: if request.auth != null && isAdminUser() &&
+        request.resource.data.userId != null &&
+        request.resource.data.title != null &&
+        request.resource.data.message != null &&
+        request.resource.data.type != null &&
+        request.resource.data.icon != null &&
+        request.resource.data.createdBy == request.auth.uid;
+      
+      // Users can update their own notifications (mark as read, etc.), admins can update any notification
+      allow update: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || isAdminUser());
+      
+      // Users can delete their own notifications, admins can delete any notification
+      allow delete: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || isAdminUser());
+    }
+    
+    // Allow admins to list all notifications
+    match /notifications {
+      allow list: if request.auth != null && isAdminUser();
+    }
+    
+    // Support Conversations collection rules
+    match /supportConversations/{conversationId} {
+      // Users can read their own conversations, admins can read all conversations
+      allow read: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || isAdminUser());
+      
+      // Users can create their own conversations
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.userEmail != null &&
+        request.resource.data.status != null;
+      
+      // Users can update their own conversations (status), admins can update any conversation
+      allow update: if request.auth != null && 
+        (resource.data.userId == request.auth.uid || isAdminUser());
+      
+      // Only admins can delete conversations
+      allow delete: if request.auth != null && isAdminUser();
+    }
+    
+    // Allow admins to list all conversations
+    match /supportConversations {
+      allow list: if request.auth != null && isAdminUser();
+    }
+    
+    // Support Messages collection rules
+    match /supportMessages/{messageId} {
+      // Helper function to check if user owns the conversation
+      function isConversationOwner() {
+        return resource != null &&
+               resource.data.conversationId != null &&
+               exists(/databases/$(database)/documents/supportConversations/$(resource.data.conversationId)) &&
+               get(/databases/$(database)/documents/supportConversations/$(resource.data.conversationId)).data.userId == request.auth.uid;
+      }
+      
+      // Helper function for request (when creating new message)
+      function isRequestConversationOwner() {
+        return request.resource.data.conversationId != null &&
+               exists(/databases/$(database)/documents/supportConversations/$(request.resource.data.conversationId)) &&
+               get(/databases/$(database)/documents/supportConversations/$(request.resource.data.conversationId)).data.userId == request.auth.uid;
+      }
+      
+      // Users can read messages from their conversations, admins can read all messages
+      allow read: if request.auth != null && (resource == null || isConversationOwner() || isAdminUser());
+      
+      // Users can create messages in their own conversations, admins can create messages in any conversation
+      allow create: if request.auth != null && (
+        (exists(/databases/$(database)/documents/supportConversations/$(request.resource.data.conversationId)) &&
+         get(/databases/$(database)/documents/supportConversations/$(request.resource.data.conversationId)).data.userId == request.auth.uid &&
+         request.resource.data.sender == 'user' &&
+         request.resource.data.senderId == request.auth.uid) ||
+        (isAdminUser() &&
+         request.resource.data.sender == 'admin' &&
+         request.resource.data.senderId == request.auth.uid)
+      );
+      
+      // Users can update their own messages (readBy), admins can update any message
+      allow update: if request.auth != null && 
+        (resource.data.senderId == request.auth.uid || isAdminUser());
+      
+      // Only admins can delete messages
+      allow delete: if request.auth != null && isAdminUser();
+    }
+    
+    // Allow users to query messages - the where clause will filter by conversationId
+    // and the read permission on individual messages will enforce access control
+    match /supportMessages {
+      // Allow list queries - Firestore will check individual message permissions
+      allow list: if request.auth != null;
+    }
   }
 }
 

@@ -6,7 +6,10 @@ import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../utils/i18n';
 import SEO from '../components/SEO';
-import { Users, UserCheck, UserX, Mail, Calendar, Shield, Search, X, CheckCircle, XCircle, Receipt, ArrowDownCircle, ArrowUpCircle, Folder, Edit2, Trash2, Save, Settings, Wrench, Code, Power } from 'lucide-react';
+import AddNotificationModal from '../components/AddNotificationModal';
+import AllNotificationsModal from '../components/AllNotificationsModal';
+import { Users, UserCheck, UserX, Mail, Calendar, Shield, Search, X, CheckCircle, XCircle, Receipt, ArrowDownCircle, ArrowUpCircle, Folder, Edit2, Trash2, Save, Settings, Wrench, Code, Power, Bell, List, MessageCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
@@ -40,6 +43,8 @@ const AdminDashboard = () => {
   const [updatingLimit, setUpdatingLimit] = useState(false);
   const [siteStatus, setSiteStatus] = useState('normal'); // 'normal' | 'maintenance' | 'development'
   const [loadingStatus, setLoadingStatus] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showAllNotificationsModal, setShowAllNotificationsModal] = useState(false);
 
   // Note: AdminRoute component handles admin access check
   // This is just an extra layer of protection
@@ -464,6 +469,27 @@ const AdminDashboard = () => {
                 {t.totalUsers}: {users.length}
               </span>
             </div>
+            <Link
+              to="/admin/support"
+              className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:scale-105"
+            >
+              <MessageCircle size={20} />
+              {t.supportManagement}
+            </Link>
+            <button
+              onClick={() => setShowAllNotificationsModal(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
+            >
+              <List size={20} />
+              {t.viewAllNotifications}
+            </button>
+            <button
+              onClick={() => setShowNotificationModal(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-fire-red hover:bg-fire-red/90 text-white rounded-lg font-medium transition-all shadow-lg shadow-fire-red/30 hover:shadow-xl hover:shadow-fire-red/40 hover:scale-105"
+            >
+              <Bell size={20} />
+              {t.addNotification}
+            </button>
           </div>
         </div>
 
@@ -1615,6 +1641,21 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Add Notification Modal */}
+      <AddNotificationModal
+        isOpen={showNotificationModal}
+        onClose={() => setShowNotificationModal(false)}
+        onSuccess={() => {
+          setShowNotificationModal(false);
+        }}
+      />
+
+      {/* View All Notifications Modal */}
+      <AllNotificationsModal
+        isOpen={showAllNotificationsModal}
+        onClose={() => setShowAllNotificationsModal(false)}
+      />
     </>
   );
 };

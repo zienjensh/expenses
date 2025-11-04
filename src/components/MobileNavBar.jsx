@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, Folder, FileText, Settings, Shield } from 'lucide-react';
+import { LayoutDashboard, ArrowDownCircle, ArrowUpCircle, Folder, FileText, Settings, Shield, Activity, MessageCircle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -39,6 +39,9 @@ const MobileNavBar = () => {
     { path: '/expenses', icon: ArrowDownCircle, label: t.expenses },
     { path: '/revenues', icon: ArrowUpCircle, label: t.revenues },
     { path: '/projects', icon: Folder, label: t.projects },
+    { path: '/reports', icon: FileText, label: t.reports },
+    { path: '/activity-log', icon: Activity, label: t.activityLog },
+    { path: '/support', icon: MessageCircle, label: t.support },
     ...(!checkingAdmin && adminStatus ? [{ path: '/admin', icon: Shield, label: t.admin }] : []),
     { path: '/settings', icon: Settings, label: t.settings },
   ];
@@ -80,7 +83,11 @@ const MobileNavBar = () => {
             : 'bg-gradient-to-r from-transparent via-fire-red/30 to-transparent'
         }`} />
         
-        <div className="flex items-center justify-around h-20 px-2 pb-safe">
+        <div className={`flex items-center h-20 px-2 pb-safe ${
+          navItems.length > 5 
+            ? 'justify-start overflow-x-auto scrollbar-hide' 
+            : 'justify-around'
+        }`}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -90,8 +97,12 @@ const MobileNavBar = () => {
                 key={item.path}
                 to={item.path}
                   className={`
-                  relative flex flex-col items-center justify-center gap-1.5 px-1 py-2.5 rounded-2xl
-                  transition-all duration-300 ease-out flex-1
+                  relative flex flex-col items-center justify-center gap-1.5 px-1.5 py-2.5 rounded-2xl
+                  transition-all duration-300 ease-out
+                  ${navItems.length > 5 
+                    ? 'min-w-[60px] flex-shrink-0' 
+                    : 'flex-1'
+                  }
                   ${isActive 
                     ? 'transform scale-105' 
                     : 'active:scale-95'
@@ -115,7 +126,7 @@ const MobileNavBar = () => {
                 )}
                 
                 {/* Icon container */}
-                <div className={`relative z-10 p-2.5 rounded-xl transition-all duration-300 ${
+                <div className={`relative z-10 p-2 rounded-xl transition-all duration-300 ${
                   isActive 
                     ? 'bg-fire-red/20 scale-110 shadow-lg shadow-fire-red/20' 
                     : theme === 'dark'
@@ -123,7 +134,7 @@ const MobileNavBar = () => {
                       : 'bg-gray-100/50 hover:bg-gray-200/50'
                 }`}>
                   <Icon 
-                    size={24} 
+                    size={22} 
                     className={`transition-all duration-300 ${
                       isActive 
                         ? 'text-fire-red' 
@@ -141,7 +152,7 @@ const MobileNavBar = () => {
                 </div>
                 
                 {/* Label */}
-                <span className={`relative z-10 text-[10px] font-semibold transition-all duration-300 ${
+                <span className={`relative z-10 text-[9px] font-semibold transition-all duration-300 text-center leading-tight ${
                   isActive 
                     ? 'text-fire-red opacity-100 scale-105' 
                     : theme === 'dark'

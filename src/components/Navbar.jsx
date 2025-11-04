@@ -2,9 +2,12 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getTranslation } from '../utils/i18n';
-import { Plus, LogOut, Menu, Moon, Sun, User, Languages } from 'lucide-react';
-import { useState } from 'react';
+import { Plus, LogOut, Menu, Moon, Sun, User, Languages, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import AddTransactionModal from './AddTransactionModal';
+import NotificationsPanel from './NotificationsPanel';
 
 const Navbar = ({ onToggleSidebar }) => {
   const { currentUser, logout } = useAuth();
@@ -13,6 +16,45 @@ const Navbar = ({ onToggleSidebar }) => {
   const t = getTranslation(language);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showRevenueModal, setShowRevenueModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (!currentUser) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', currentUser.uid),
+      where('read', '==', false)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const now = new Date();
+      const unreadNotifications = snapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          expiresAt: doc.data().expiresAt?.toDate?.() || null
+        }))
+        .filter(notif => {
+          // Filter out expired notifications
+          if (notif.expiresAt && notif.expiresAt < now) {
+            return false;
+          }
+          return true;
+        });
+
+      setUnreadCount(unreadNotifications.length);
+    }, (error) => {
+      console.error('Error fetching notifications:', error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
 
   const handleLogout = async () => {
     try {
@@ -110,6 +152,27 @@ const Navbar = ({ onToggleSidebar }) => {
               </div>
             </div>
             
+            {/* Notifications Button */}
+            {currentUser && (
+              <button
+                onClick={() => setShowNotifications(true)}
+                className={`relative flex items-center justify-center w-10 h-10 transition-all duration-300 rounded-xl backdrop-blur-sm hover:scale-110 active:scale-95 ${
+                  theme === 'dark' 
+                    ? 'bg-white/5 hover:bg-white/10 text-light-gray hover:text-fire-red border border-white/10 hover:border-fire-red/30' 
+                    : 'bg-gray-100/50 hover:bg-gray-200/50 text-gray-700 hover:text-fire-red border border-gray-200/50 hover:border-fire-red/30'
+                }`}
+                title={t.notifications}
+              >
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-fire-red/0 to-fire-red/0 hover:from-fire-red/10 hover:to-transparent transition-all duration-300" />
+                <Bell size={20} className="relative z-10" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-fire-red text-white text-xs rounded-full flex items-center justify-center font-bold z-20 animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             {/* Language Toggle Button */}
             <button
               onClick={toggleLanguage}
@@ -179,6 +242,13 @@ const Navbar = ({ onToggleSidebar }) => {
         <AddTransactionModal
           type="revenue"
           onClose={() => setShowRevenueModal(false)}
+        />
+      )}
+
+      {currentUser && (
+        <NotificationsPanel
+          isOpen={showNotifications}
+          onClose={() => setShowNotifications(false)}
         />
       )}
     </>

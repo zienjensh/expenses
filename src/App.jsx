@@ -1,11 +1,13 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { TransactionProvider } from './context/TransactionContext';
 import { ProjectsProvider } from './context/ProjectsContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { getTranslation } from './utils/i18n';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import Sidebar from './components/Sidebar';
@@ -21,6 +23,8 @@ import Reports from './pages/Reports';
 import Projects from './pages/Projects';
 import Settings from './pages/Settings';
 import ActivityLog from './pages/ActivityLog';
+import Support from './pages/Support';
+import SupportManagement from './pages/SupportManagement';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 
@@ -48,12 +52,21 @@ function App() {
                           <Route path="/projects" element={<Projects />} />
                           <Route path="/reports" element={<Reports />} />
                           <Route path="/activity-log" element={<ActivityLog />} />
+                          <Route path="/support" element={<Support />} />
                           <Route path="/settings" element={<Settings />} />
                           <Route 
                             path="/admin" 
                             element={
                               <AdminRoute>
                                 <AdminDashboard />
+                              </AdminRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/admin/support" 
+                            element={
+                              <AdminRoute>
+                                <SupportManagement />
                               </AdminRoute>
                             } 
                           />
@@ -101,7 +114,9 @@ function App() {
 
 const Layout = ({ children, sidebarOpen, setSidebarOpen }) => {
   const { language } = useLanguage();
+  const { theme } = useTheme();
   const dir = language === 'ar' ? 'rtl' : 'ltr';
+  const t = getTranslation(language);
   
   return (
     <div className={`min-h-screen bg-light-gray dark:bg-charcoal transition-colors duration-300 relative ${dir}`}>
@@ -129,6 +144,14 @@ const Layout = ({ children, sidebarOpen, setSidebarOpen }) => {
           {children}
         </main>
       </div>
+      {/* Floating Support Button - only visible on mobile */}
+      <Link
+        to="/support"
+        className={`md:hidden fixed ${dir === 'rtl' ? 'left-4' : 'right-4'} bottom-24 z-50 bg-fire-red hover:bg-fire-red/90 text-white rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-300 animate-pulse hover:animate-none flex items-center justify-center`}
+        title={t.supportTitle}
+      >
+        <MessageCircle size={24} />
+      </Link>
       {/* Mobile Navigation Bar - only visible on mobile */}
       <MobileNavBar />
     </div>

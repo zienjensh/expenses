@@ -10,7 +10,8 @@ import {
   User,
   LogOut,
   Shield,
-  Activity
+  Activity,
+  MessageCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -53,7 +54,11 @@ const Sidebar = ({ onClose }) => {
     { path: '/projects', icon: Folder, label: t.projects },
     { path: '/reports', icon: FileText, label: t.reports },
     { path: '/activity-log', icon: Activity, label: t.activityLog },
-    ...(!checkingAdmin && adminStatus ? [{ path: '/admin', icon: Shield, label: t.adminDashboard }] : []),
+    { path: '/support', icon: MessageCircle, label: t.support },
+    ...(!checkingAdmin && adminStatus ? [
+      { path: '/admin', icon: Shield, label: t.adminDashboard },
+      { path: '/admin/support', icon: MessageCircle, label: t.supportManagement }
+    ] : []),
     { path: '/settings', icon: Settings, label: t.settings },
   ];
 

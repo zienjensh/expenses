@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico'],
+      includeAssets: ['favicon.ico', 'Logo.png'],
       manifest: {
         name: 'إدارة المصروفات',
         short_name: 'المصروفات',
@@ -22,15 +22,15 @@ export default defineConfig({
         lang: 'ar',
         icons: [
           {
-            src: '/icon-192x192.svg',
+            src: '/Logo.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/icon-512x512.svg',
+            src: '/Logo.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable'
           },
           {
@@ -45,13 +45,13 @@ export default defineConfig({
             short_name: 'مصروف',
             description: 'إضافة مصروف جديد',
             url: '/expenses?action=add',
-            icons: [{ src: '/icon-192x192.svg', sizes: '192x192' }]
+            icons: [{ src: '/Logo.png', sizes: '192x192' }]
           }
         ]
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,svg,png,woff2}'],
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
